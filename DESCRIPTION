@@ -1,0 +1,27 @@
+Package: rENM.data
+Type: Package
+Title: Tools for rENM data assembly
+Version: 0.1.0.9000
+Author: John L. Schnase
+Maintainer: John L. Schnase <jschnase@mac.com>
+ORCID: 0000-0001-7473-3977
+Description: Helper tools to collect and prepare input data for the  
+    rENM framework. Note that data products created by this package 
+    are needed for downstream rENM workflow tasks.
+Depends: R (>= 4.1.0)
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+URL: https://github.com/jschnase/rENMtools
+BugReports: https://github.com/jschnase/rENMtools/issues
+Imports:
+    sf,
+    utils,
+    terra,
+    tools,
+    stats,
+    future,
+    future.apply,
+    raster,
+    usdm
