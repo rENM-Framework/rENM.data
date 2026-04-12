@@ -4,14 +4,14 @@
 \alias{limit_record_count}
 \title{Limit occurrence records per bin by random sampling}
 \usage{
-limit_record_count(alpha_code, record_count, project_dir = NULL)
+limit_record_count(alpha_code, record_count = 250, project_dir = NULL)
 }
 \arguments{
 \item{alpha_code}{Character. Four-letter species alpha code
 (e.g., \code{"CASP"}).}
 
 \item{record_count}{Integer. Maximum number of records to retain per
-bin. Must be positive.}
+bin. Must be positive. Default = 250.}
 
 \item{project_dir}{Character, NULL. Optional project root directory.
 If NULL, resolved via \code{rENM_project_dir()}.}

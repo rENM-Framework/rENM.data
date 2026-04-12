@@ -56,7 +56,7 @@
 #' @param alpha_code Character. Four-letter species alpha code
 #'   (e.g., \code{"CASP"}).
 #' @param record_count Integer. Maximum number of records to retain per
-#'   bin. Must be positive.
+#'   bin. Must be positive. Default = 250.
 #' @param project_dir Character, NULL. Optional project root directory.
 #'   If NULL, resolved via \code{rENM_project_dir()}.
 #'
@@ -98,7 +98,7 @@
 #' @family occurrence processing
 #' @export
 limit_record_count <- function(alpha_code,
-                               record_count,
+                               record_count = 250,
                                project_dir = NULL) {
 
   ## ---- validation -----------------------------------------------------------
