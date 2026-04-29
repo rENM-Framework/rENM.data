@@ -51,11 +51,6 @@ set_up_run("CASP")
 
 ## Relationship to Other Packages
 
--   `rENM.core` — project structure and utilities
--   `rENM.analysis` — modeling and trend estimation
--   `rENM.reports` — summaries and outputs
--   `rENM.ai` — AI-based interpretation
-
 `rENM.data` provides the standardized inputs required by all downstream components.
 
 ## License
@@ -65,4 +60,4 @@ See `LICENSE` for details.
 ------------------------------------------------------------------------
 
 **rENM Framework**\
-A modular system for reconstructing and analyzing long-term ecological niche dynamics in climate space.
+A modular system for reconstructing and analyzing long-term ecological niche dynamics.
