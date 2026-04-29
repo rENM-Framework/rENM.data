@@ -1,5 +1,7 @@
 # rENM.data
 
+![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-data-informational)
+
 **Data assembly and preprocessing for the rENM Framework**
 
 ## Overview
