@@ -2,136 +2,84 @@
 % Please edit documentation in R/data-get_merra_variables.R
 \name{get_merra_variables}
 \alias{get_merra_variables}
-\title{Assemble a run-tailored set of MERRA-2 variables for further processing}
+\title{Crop and export MERRA-2 predictor rasters for a species run}
 \usage{
 get_merra_variables(
   alpha_code,
   m2_vars = NULL,
   mc_vars = NULL,
-  file_type = c(".tif", ".asc")
+  file_type = c(".tif", ".asc"),
+  project_dir = NULL
 )
 }
 \arguments{
-\item{alpha_code}{Character. Four-letter species code used to locate
-the run directory and extent file.}
+\item{alpha_code}{Character scalar. Four-letter species code.}
 
-\item{m2_vars}{Character, NULL. Optional vector of variable basenames
-to include from the m2 directory.}
+\item{m2_vars}{Character vector or \code{NULL}. Variable basenames to
+include from the \code{m2} directory. \code{NULL} includes all.}
 
-\item{mc_vars}{Character, NULL. Optional vector of variable basenames
-to include from the mc directory.}
+\item{mc_vars}{Character vector or \code{NULL}. Variable basenames to
+include from the \code{mc} directory. \code{NULL} includes all.}
 
-\item{file_type}{Character. Output formats to write. Allowed values
-are ".tif" and ".asc".}
+\item{file_type}{Character. Output format(s): \code{".tif"}, \code{".asc"},
+or both. Default is both.}
+
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-Invisibly returns a Data frame summarizing processing results:
-\itemize{
-\item year: Integer bin year
-\item family: Character indicating m2 or mc source
-\item basename: Character variable name
-\item in_file: Character input file path
-\item tif_written: Logical indicating GeoTIFF output success
-\item asc_written: Logical indicating ASCII output success
-\item notes: Character processing notes or failure reason
-}
-
-Side effects:
-\itemize{
-\item Writes cropped raster files to disk
-\item Creates output directories as needed
-\item Removes ASCII sidecar files when applicable
-\item Appends a processing summary to the run log
-\item Writes progress messages to the console
-}
+Invisibly returns a data frame with one row per candidate raster
+and columns \code{year}, \code{family}, \code{basename}, \code{in_file},
+\code{tif_written}, \code{asc_written}, and \code{notes} (reason for
+skipping, or empty string on success).
 }
 \description{
-Crops and exports MERRA-2 variables into 5-year bins for a species,
-writing run-specific predictor rasters for downstream rENM modeling.
+For each 5-year bin from 1980 to 2020, locates MERRA-2 raster files from
+the \code{m2} and \code{mc} source directories, crops them to the species'
+spatial extent, and writes the results to the run's \code{_vars/} directory.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+\strong{Input locations}
 
-\strong{Inputs}:
-MERRA-2 rasters are read from:
-
-\code{<project_dir>/data/merra/m2/<year>/}
-\code{<project_dir>/data/merra/mc/<year>/}
-
-where \if{html}{\out{<year>}} corresponds to 5-year bins (1980, 1985, ..., 2020).
-
-Files may be in .tif, .tiff, or .asc format. If multiple files share
-the same basename, duplicates are resolved with preference for .tif.
-
-The spatial extent is read from:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/extent.txt}
-
-which must contain "Upper-left" and "Lower-right" coordinates in
-(lon, lat) order.
-
-\strong{Methods}:
-For each 5-year bin, the function:
+Rasters (\code{.tif}, \code{.tiff}, or \code{.asc}) are read from:
 \itemize{
-\item Identifies candidate rasters from m2 and mc directories
-\item Filters by basename using m2_vars and mc_vars if provided
-\item De-duplicates files by basename with preference for GeoTIFF
-\item Crops rasters to the specified bounding box
+\item \code{PROJECT_DIR/data/merra/m2/YEAR/}
+\item \code{PROJECT_DIR/data/merra/mc/YEAR/}
 }
+When multiple files share the same basename, GeoTIFF is preferred over ASC.
+Use \code{m2_vars} and \code{mc_vars} to restrict processing to specific
+variable names (matched by basename, case-insensitive).
 
-Geographic rasters:
-\itemize{
-\item Detects longitude range (0-360) and rotates to (-180, 180)
-\item Handles antimeridian crossing during cropping
-}
+\strong{Spatial extent}
 
-Projected rasters:
-\itemize{
-\item Builds a WGS84 bounding box polygon
-\item Projects the polygon into the raster CRS
-\item Crops using the projected geometry
-}
+The bounding box is read from \code{RUN_DIR/_occs/extent.txt}, which must
+be created first by \code{\link{find_occurrence_extent}},
+\code{\link{find_range_extent}}, or \code{\link{set_extent}}.
 
-Only rasters with valid cells after cropping are written.
+\strong{CRS handling}
 
-\strong{Outputs}:
-Cropped rasters are written to:
+Geographic rasters (lon/lat CRS or EPSG:4326) with 0-360 longitude are
+rotated to -180-180 before cropping. Projected rasters are cropped by
+projecting the WGS84 bounding box polygon into the raster CRS. Rasters that
+produce no valid cells after cropping are skipped.
 
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_vars/<year>/}
+\strong{Output}
 
-Output formats are controlled by \code{file_type}:
-\itemize{
-\item .tif: GeoTIFF with CRS preserved or assigned (WGS84 if missing)
-\item .asc: ASCII grid; sidecar files (.aux.xml, .xml, .prj) are removed
-}
-
-\strong{Log file}:
-A processing summary is appended to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_log.txt}
-
-including:
-\itemize{
-\item alpha code
-\item extent used (xmin, xmax, ymin, ymax)
-\item input m2 and mc roots
-\item output directory
-\item per-year processing results
-\item skipped files and reasons
-}
-
-\strong{Data requirements}:
-The extent.txt file must exist and be correctly formatted. Input
-raster directories must contain at least one valid raster file.
+Cropped rasters are written to \code{RUN_DIR/_vars/YEAR/}. For
+\code{.asc} output, GDAL sidecar files (\code{.aux.xml}, \code{.xml},
+\code{.prj}) are removed. Missing CRS on output is assigned WGS84.
 }
 \examples{
 \dontrun{
-  get_merra_variables("CASP")
+get_merra_variables("CASP")
+get_merra_variables("CASP", m2_vars = c("bio1", "bio12"),
+                    project_dir = "/projects/rENM")
 }
 
+}
+\seealso{
+\code{\link{find_occurrence_extent}}, \code{\link{find_range_extent}},
+\code{\link{set_extent}}
 }

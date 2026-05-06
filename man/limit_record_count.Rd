@@ -2,111 +2,49 @@
 % Please edit documentation in R/data-limit_record_count.R
 \name{limit_record_count}
 \alias{limit_record_count}
-\title{Limit occurrence records per bin by random sampling}
+\title{Downsample occurrence records per bin to a maximum count}
 \usage{
 limit_record_count(alpha_code, record_count = 250, project_dir = NULL)
 }
 \arguments{
-\item{alpha_code}{Character. Four-letter species alpha code
+\item{alpha_code}{Character scalar. Four-letter species alpha code
 (e.g., \code{"CASP"}).}
 
-\item{record_count}{Integer. Maximum number of records to retain per
-bin. Must be positive. Default = 250.}
+\item{record_count}{Integer scalar. Maximum records to retain per bin.
+Must be positive. Default is 250.}
 
-\item{project_dir}{Character, NULL. Optional project root directory.
-If NULL, resolved via \code{rENM_project_dir()}.}
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-List (invisibly returned) with elements:
-\itemize{
-\item \code{alpha_code}: Character species alpha code
-\item \code{files_processed}: Character vector of processed file paths
-\item \code{counts_before}: Named integer vector of original counts
-\item \code{counts_after}: Named integer vector of retained counts
-\item \code{output_dir}: Character directory containing processed files
-\item \code{log_file}: Character path to the run log file
-}
-
-Side effects:
-\itemize{
-\item Overwrites occurrence CSV files in the tmp directory
-\item Appends a processing summary to the run log
-\item Writes progress messages to the console
-}
+Invisibly returns a list with elements \code{alpha_code},
+\code{files_processed}, \code{counts_before} (named integer vector),
+\code{counts_after} (named integer vector), \code{output_dir}, and
+\code{log_file}.
 }
 \description{
-Randomly downsamples occurrence records within each per-bin CSV file
-to a maximum of \code{record_count} rows while preserving all records
-when counts fall below the specified threshold.
-}
-\details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
-
-\strong{Inputs}:
-This function operates on occurrence files located in:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/tmp/}
-
-Each file follows the naming pattern:
-
-\code{of-<year>.csv}
-
-\strong{Methods}:
-\itemize{
-\item Reads each \code{of-<year>.csv} file
-\item Counts the number of rows
-\item Randomly samples up to \code{record_count} rows without
-replacement
-\item Writes the sampled dataset back to the same file
-}
-
-Sampling uses base R \code{sample()}, allowing reproducibility when a
-random seed is set externally (e.g., \code{set.seed()}).
-
-\strong{Outputs}:
-Each input file is overwritten with the sampled dataset in:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/tmp/}
-
-\strong{Log file}:
-A processing summary is appended to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_log.txt}
-
-including total counts before and after sampling and per-file
-summaries.
-
-\strong{Typical use cases}:
-\itemize{
-\item Balancing sample sizes across temporal bins
-\item Sensitivity analysis of model performance vs. sample size
-\item Reducing computational load for downstream modeling
-}
+Randomly samples up to \code{record_count} rows from each per-bin
+occurrence CSV in \code{_occs/tmp/}, overwriting each file in place.
+Files with fewer rows than \code{record_count} are left unchanged.
+Reproducible sampling requires setting a seed externally with
+\code{set.seed()} before calling this function.
 }
 \examples{
 \dontrun{
-  limit_record_count("CASP", record_count = 1000)
-
-  limit_record_count(
-    "CASP",
-    record_count = 500,
-    project_dir = "/projects/rENM"
-  )
+limit_record_count("CASP", record_count = 250)
+limit_record_count("CASP", record_count = 500, project_dir = "/projects/rENM")
 }
 
 }
 \seealso{
-\code{get_ebird_occurrences()},
-\code{remove_duplicate_occurrences()},
-\code{thin_occurrences()},
-\code{tidy_occurrences()}
+\code{\link{get_ebird_occurrences}},
+\code{\link{remove_duplicate_occurrences}},
+\code{\link{thin_occurrences}}, \code{\link{tidy_occurrences}}
 
 Other occurrence processing: 
-\code{\link{remove_duplicate_occurrences}()}
+\code{\link{remove_duplicate_occurrences}()},
+\code{\link{thin_occurrences}()}
 }
 \concept{occurrence processing}

@@ -2,134 +2,57 @@
 % Please edit documentation in R/data-thin_occurrences.R
 \name{thin_occurrences}
 \alias{thin_occurrences}
-\title{Apply spatial thinning to occurrence records (sequential version)}
+\title{Apply spatial thinning to occurrence records (sequential)}
 \usage{
 thin_occurrences(alpha_code, thin_distance, project_dir = NULL)
 }
 \arguments{
-\item{alpha_code}{Character. Four-letter species alpha code (e.g.,
-"CASP").}
+\item{alpha_code}{Character scalar. Four-letter species alpha code
+(e.g., \code{"CASP"}).}
 
-\item{thin_distance}{Numeric. Minimum allowed distance (in kilometers)
-between retained occurrence points.}
+\item{thin_distance}{Numeric scalar. Minimum separation distance in
+kilometers between retained points. Must be positive.}
 
-\item{project_dir}{Character. Optional rENM project root directory. If
-NULL, the directory is resolved using
-\code{\link{rENM_project_dir}} via:
-
-\enumerate{
-\item Explicit project_dir argument
-\item options(rENM.project_dir)
-\item RENM_PROJECT_DIR environment variable
-}
-
-Providing project_dir explicitly is recommended for reproducible
-scripts and package testing.}
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-List. Invisibly returns a structured list containing:
-
-\describe{
-\item{alpha_code}{Character. Species alpha code.}
-\item{files_processed}{Character vector. Full paths to processed
-occurrence files.}
-\item{points_before}{Named integer vector. Number of occurrence
-points before thinning for each file.}
-\item{points_after}{Named integer vector. Number of occurrence
-points after thinning for each file.}
-\item{output_dir}{Character. Directory containing thinned occurrence
-files.}
-\item{log_file}{Character. Path to the _log.txt file updated with
-processing details.}
-}
-
-Side effects:
-\itemize{
-\item Overwrites occurrence CSV files with thinned datasets
-\item Reduces point counts according to the thinning distance
-\item Appends a processing summary to the log file
-}
+Invisibly returns a list with elements \code{alpha_code},
+\code{files_processed}, \code{points_before} (named integer vector),
+\code{points_after} (named integer vector), \code{output_dir}, and
+\code{log_file}.
 }
 \description{
-Applies spatial thinning to occurrence records to reduce spatial
-clustering by enforcing a minimum distance between retained points.
-This helps mitigate spatial sampling bias in ecological niche models.
+Applies a greedy sequential thinning algorithm to per-bin occurrence CSV
+files in \code{_occs/tmp/}, enforcing a minimum separation distance between
+retained points. Files are overwritten in place.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+The thinning algorithm processes records in input order. The first point is
+always retained. Each subsequent point is retained only if its Haversine
+distance to every previously retained point is at least
+\code{thin_distance} kilometers. This is a greedy nearest-neighbor filter
+and does not guarantee an optimal solution, but is fast and deterministic
+for a given input order.
 
-\strong{Pipeline context}
-Spatial thinning is typically applied after duplicate removal and
-prior to model fitting. The thinning algorithm enforces a minimum
-separation distance between retained occurrence points, reducing
-over-representation of heavily sampled locations.
-
-The rENM project directory is resolved using
-\code{\link{rENM_project_dir}}, ensuring that all filesystem operations
-are portable and do not rely on hard-coded paths such as ~/rENM.
-
-\strong{Inputs}
-This function operates on per-bin occurrence CSV files located in:
-
-\code{<rENM_project_dir>/runs/<alpha_code>/_occs/tmp/}
-
-Files must follow the naming pattern:
-
-\code{of-<year>.csv}
-
-Each file must contain columns:
-
-\itemize{
-\item longitude
-\item latitude
-}
-
-\strong{Outputs}
-Thinned datasets are written back to the same directory:
-
-\code{<rENM_project_dir>/runs/<alpha_code>/_occs/tmp/}
-
-Files are overwritten in place.
-
-\strong{Methods}
-A sequential thinning algorithm is applied:
-
-\itemize{
-\item Records are processed in input order
-\item The first point is always retained
-\item Each subsequent point is compared to all retained points
-\item Distances are computed using the Haversine formula
-\item Points closer than the specified threshold are removed
-}
-
-The Haversine distance is computed in kilometers using a spherical
-Earth approximation.
-
-\strong{Data requirements}
-The temporary occurrence directory must exist and contain one or more
-CSV files matching the expected naming pattern and column structure.
-
-Centralizing project-directory resolution via
-\code{\link{rENM_project_dir}} ensures that all functions in the rENM
-package operate relative to a single configurable project root,
-improving reproducibility and enabling use in HPC or multi-project
-environments.
+Use \code{\link{thin_occurrences2}} for parallel execution on large datasets.
 }
 \examples{
 \dontrun{
-
-# Standard workflow
 thin_occurrences("CASP", thin_distance = 10)
-
-# Reproducible script
-thin_occurrences("CASP", thin_distance = 10,
-                 project_dir = "/projects/rENM")
-
+thin_occurrences("CASP", thin_distance = 10, project_dir = "/projects/rENM")
 }
 
 }
 \seealso{
-\link{rENM_project_dir}
+\code{\link{thin_occurrences2}},
+\code{\link{remove_duplicate_occurrences}},
+\code{\link{tidy_occurrences}}
+
+Other occurrence processing: 
+\code{\link{limit_record_count}()},
+\code{\link{remove_duplicate_occurrences}()}
 }
+\concept{occurrence processing}

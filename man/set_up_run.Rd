@@ -7,96 +7,58 @@
 set_up_run(alpha_code, project_dir = NULL)
 }
 \arguments{
-\item{alpha_code}{Character(1). Four-letter species alpha code
+\item{alpha_code}{Character scalar. Four-letter species alpha code
 (e.g., \code{"CASP"}).}
 
-\item{project_dir}{Character(1) or NULL. Optional project root directory.
-If NULL, resolved via \code{rENM_project_dir()}.}
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-A list with:
-\itemize{
-\item \code{alpha_code}: Species alpha code
-\item \code{run_dir}: Full path to the run directory
-\item \code{created}: Character vector of newly created directories
-\item \code{existing}: Character vector of directories that already existed
-\item \code{log_file}: Path to the run log file
-}
+Invisibly returns a list with elements \code{alpha_code},
+\code{run_dir}, \code{created} (character vector of newly created
+directory paths), \code{existing} (character vector of pre-existing
+paths), and \code{log_file}.
 }
 \description{
-Create the directory layout required for a single rENM modeling run
-identified by a four-letter species alpha code. Missing directories
-are created while existing directories are preserved.
+Creates the directory layout required for a single rENM modeling run
+identified by a four-letter species alpha code. Missing directories are
+created; existing directories are preserved.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+The run directory is constructed as \code{PROJECT_DIR/runs/ALPHA_CODE}
+and populated with the following structure:
 
-\strong{Inputs}:
-The base project directory is resolved using:
-
-\code{rENM_project_dir()}
-
-The run directory is constructed as:
-
-\code{<project_dir>/runs/<alpha_code>}
-
-\strong{Directory structure}:
-The following directories are created if they do not already exist:
-
-\itemize{
-\item \code{_occs/} occurrence input/output files
-\item \code{_vars/} cropped predictor rasters
-\item \code{Trends/} trend analysis outputs
-\item \code{Summaries/} plots, tables, and reports
-\item \code{TimeSeries/<year>/model/} model outputs
-\item \code{TimeSeries/<year>/occs/} processed occurrences
-\item \code{TimeSeries/<year>/vars/} environmental predictors
+\preformatted{
+runs/<alpha_code>/
+  _occs/                      occurrence input/output files
+  _vars/                      cropped predictor rasters
+  Trends/
+    centroids/
+    suitability/
+    variables/
+  Summaries/                  plots, tables, and reports
+  TimeSeries/
+    <year>/
+      model/                  model outputs
+      occs/                   processed occurrences
+      vars/                   environmental predictors
 }
 
-Additional subdirectories under \code{Trends/} include:
-
-\itemize{
-\item \code{centroids/}
-\item \code{suitability/}
-\item \code{variables/}
-}
-
-Time series directories are created for 5-year bins spanning
-1980 to 2020.
-
-\strong{Outputs}:
-A standardized log file is created or appended at:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_log.txt}
-
-recording created and existing directories.
-
-\strong{Methods}:
-\itemize{
-\item Resolves project directory
-\item Constructs run-specific directory paths
-\item Creates missing directories recursively
-\item Records created and pre-existing paths
-\item Appends a processing summary to the run log
-}
-
-\strong{Data requirements}:
-No input data are required. This function initializes structure only
-and does not validate or process data files.
+Time series directories are created for 5-year bins spanning 1980 to 2020.
+A run log is created or appended at \code{RUN_DIR/_log.txt}.
 }
 \examples{
 \dontrun{
-  Sys.setenv(RENM_PROJECT_DIR = "~/rENM")
-  run <- set_up_run("CASP")
-
-  run <- set_up_run("CASP", project_dir = "/projects/rENM")
-
-  run$run_dir
-  run$created
+run <- set_up_run("CASP")
+run <- set_up_run("CASP", project_dir = "/projects/rENM")
+run$run_dir
+run$created
 }
 
+}
+\seealso{
+\code{\link[rENM.core]{rENM_project_dir}}
 }
 \concept{run preparation}

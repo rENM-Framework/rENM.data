@@ -2,161 +2,82 @@
 % Please edit documentation in R/data-thin_occurrences2.R
 \name{thin_occurrences2}
 \alias{thin_occurrences2}
-\title{Apply spatial thinning to occurrence records (parallel version)}
+\title{Apply spatial thinning to occurrence records (parallel)}
 \usage{
-thin_occurrences2(alpha_code, radius = 1, records = 250, workers = NULL)
+thin_occurrences2(
+  alpha_code,
+  radius = 1,
+  records = 250,
+  workers = NULL,
+  project_dir = NULL
+)
 }
 \arguments{
-\item{alpha_code}{Character. Four-letter species alpha code used to
-locate the run directory.}
+\item{alpha_code}{Character scalar. Four-letter species alpha code
+(e.g., \code{"CASP"}).}
 
-\item{radius}{Numeric. Minimum allowed distance between retained
-points in kilometers. Use 0 to disable spatial thinning.}
+\item{radius}{Numeric scalar. Minimum separation distance in kilometers.
+Use \code{0} to disable spatial thinning. Default is 1.}
 
-\item{records}{Integer. Maximum number of records to keep per file
-after thinning. Use 0 to keep all available records.}
+\item{records}{Integer scalar. Maximum records to retain per file after
+thinning. Use \code{0} to keep all surviving records. Default is 250.}
 
-\item{workers}{Integer, NULL. Number of parallel workers to use. If
-NULL, uses all available logical cores.}
+\item{workers}{Integer scalar or \code{NULL}. Number of parallel workers.
+If \code{NULL} (default), all available logical cores are used.}
+
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-Data frame. Invisibly returns a data frame with one row per processed
-file and columns:
-
-\describe{
-\item{file}{Character. File name (e.g., "of-2015.csv").}
-\item{before}{Integer. Number of rows before thinning.}
-\item{kept_after_radius}{Integer. Rows retained after spatial
-thinning, or NA if disabled or skipped.}
-\item{kept_after_records}{Integer. Rows retained after applying the
-records cap, or NA if no cap was applied.}
-\item{after}{Integer. Number of rows written back to disk.}
-}
-
-Side effects:
-\itemize{
-\item Overwrites occurrence CSV files with processed datasets
-\item Applies spatial thinning and optional record capping
-\item Executes processing in parallel across worker processes
-\item Appends a processing summary to the log file
-}
+Invisibly returns a data frame with one row per processed file and
+columns \code{file} (file name), \code{before} (rows before thinning),
+\code{kept_after_radius} (rows after spatial filter, or \code{NA} if
+disabled), \code{kept_after_records} (rows after record cap, or
+\code{NA} if not applied), and \code{after} (rows written to disk).
 }
 \description{
-Applies spatial thinning and optional record capping to per-year
-occurrence CSV files using parallel processing, writing results
-back to disk in place for efficient large-scale preprocessing.
+Applies spatial thinning and optional record capping to per-bin occurrence
+CSV files using parallel execution via the \pkg{future} and
+\pkg{future.apply} packages. Files are overwritten in place. This is the
+parallel counterpart to \code{\link{thin_occurrences}} and is suited to
+larger datasets where per-bin files are numerous or large.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+\strong{Spatial thinning}
 
-\strong{Pipeline context}
-This function is the parallel counterpart to the serial thinning
-routine and is intended for larger species datasets where per-year
-files are numerous or large.
-
-Spatial thinning is typically applied after duplicate removal and
-prior to model fitting, reducing spatial clustering and sampling bias.
-
-\strong{Inputs}
-For a given species alpha code, the function looks for files named:
-
-\code{of-YYYY.csv}
-
-in:
-
-\code{rENM_project_dir()/runs/<alpha_code>/_occs/tmp/}
-
-Each file is expected to contain at least:
-
-\itemize{
-\item species
-\item longitude
-\item latitude
-}
-
-Files with zero rows or missing coordinate columns are skipped.
-
-\strong{Outputs}
-Processed files are written back in place to:
-
-\code{rENM_project_dir()/runs/<alpha_code>/_occs/tmp/}
-
-Files are overwritten with thinned and optionally capped datasets.
-
-\strong{Methods}
-\strong{Spatial thinning (radius)}
-
-If radius > 0, a greedy nearest-neighbor filter is applied:
-
-\itemize{
-\item The first point is always retained
-\item Each subsequent point is retained only if it is at least
-radius kilometers away from all previously retained points
-\item Distances are computed using the Haversine formula
-\item Earth radius is assumed to be 6371 km
-}
-
-The number of records surviving this step is reported as
-kept_after_radius.
+If \code{radius > 0}, a greedy Haversine nearest-neighbor filter is applied
+per file: the first point is always retained; each subsequent point is kept
+only if it is at least \code{radius} km from all previously retained points.
+Earth radius is assumed to be 6371 km. Set \code{radius = 0} to skip
+spatial thinning.
 
 \strong{Record cap}
 
-If records > 0, the number of rows is further capped to at most
-records per file using random down-sampling. The final row count is
-stored in kept_after_records, and the after column reports the final
-number of rows written back to disk.
+If \code{records > 0}, the thinned dataset is further randomly downsampled
+to at most \code{records} rows per file. Set \code{records = 0} to keep all
+rows surviving thinning.
 
 \strong{Parallel execution}
 
-Parallelism is handled by the future and future.apply packages using
-a multisession plan:
-
-\itemize{
-\item If workers is NULL, the number of workers defaults to the
-number of available logical cores (at least 1)
-\item Each file is processed independently on a worker
-\item Files are overwritten in place after processing
-}
-
-Both future and future.apply must be installed and loadable; if not,
-the function stops with an informative error.
-
-\strong{Logging}
-
-A standardized processing summary is appended to:
-
-\code{rENM_project_dir()/runs/<alpha_code>/_log.txt}
-
-under the section title:
-
-"Processing summary (thin_occurrences2 parallel)"
-
-The log entry includes:
-
-\itemize{
-\item number of files processed
-\item total rows before and after thinning
-\item total rows removed
-\item number of files changed
-\item thinning radius and records cap used
-}
-
-Centralizing project-directory resolution via
-\code{\link{rENM_project_dir}} ensures CRAN-compliant, portable
-behavior across systems.
+Files are processed independently on separate workers using a
+\code{future::multisession} plan. If \code{workers} is \code{NULL}, all
+available logical cores are used. Both \pkg{future} and \pkg{future.apply}
+must be installed; the function stops with an informative error if they are
+not.
 }
 \examples{
 \dontrun{
-out <- thin_occurrences2(
-  alpha_code = "CASP",
-  radius     = 10,
-  records    = 500,
-  workers    = NULL
-)
-
+out <- thin_occurrences2("CASP", radius = 10, records = 500)
 out
+thin_occurrences2("CASP", radius = 10, records = 500,
+                  project_dir = "/projects/rENM")
 }
 
+}
+\seealso{
+\code{\link{thin_occurrences}},
+\code{\link{remove_duplicate_occurrences}},
+\code{\link{tidy_occurrences}}
 }

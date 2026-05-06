@@ -2,133 +2,65 @@
 % Please edit documentation in R/data-find_range_extent.R
 \name{find_range_extent}
 \alias{find_range_extent}
-\title{Find the spatial extent of a species' USGS GAP range}
+\title{Derive a spatial extent from a species USGS GAP range polygon}
 \usage{
-find_range_extent(alpha_code, pad_pct = 2)
+find_range_extent(alpha_code, pad_pct = 2, project_dir = NULL)
 }
 \arguments{
-\item{alpha_code}{Character. Species alpha code matching ALPHA.CODE in
-the species CSV file.}
+\item{alpha_code}{Character scalar. Four-letter species alpha code
+matching the \code{ALPHA.CODE} field in the project species table.}
 
-\item{pad_pct}{Numeric. Percent padding applied to the bounding box.
-Positive values expand and negative values contract the box. Must be
-greater than -100. Default = 2.}
+\item{pad_pct}{Numeric scalar. Symmetric percent padding applied to
+the bounding box. Positive values expand the extent and negative
+values contract it. Must be greater than -100. Default is
+\code{2}.}
+
+\item{project_dir}{Character scalar or \code{NULL}. Path to the
+rENM project root. If \code{NULL}, the project directory is
+resolved using \code{rENM_project_dir()}.}
 }
 \value{
-List (invisibly returned) with elements:
-\itemize{
-\item ul_lon: Numeric upper-left longitude
-\item ul_lat: Numeric upper-left latitude
-\item lr_lon: Numeric lower-right longitude
-\item lr_lat: Numeric lower-right latitude
-}
-
-Side effects:
-\itemize{
-\item Writes extent.txt to the _occs directory
-\item Backs up any existing extent.txt file
-\item Appends a processing summary to the run log
-\item Writes progress messages to the console
-}
+Invisibly returns a named list with numeric elements
+\code{ul_lon}, \code{ul_lat}, \code{lr_lon}, and \code{lr_lat}
+(upper-left and lower-right corners in decimal degrees).
 }
 \description{
-Computes a bounding box from a species GAP range polygon and writes
-the result to extent.txt for use in rENM preprocessing workflows.
+Reads a USGS GAP range shapefile for a species, computes a padded
+geographic bounding box in WGS84 coordinates, and writes the result
+to \code{_occs/extent.txt} within the species run directory.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+Existing \code{extent.txt} files are automatically backed up prior
+to writing a new extent definition.
 
-\strong{Inputs}:
-The species table is read from:
+The species lookup table is expected at \code{data/_species.csv}
+under the project root directory.
 
-\code{<project_dir>/data/}
-\code{_species.csv}
+The function identifies the appropriate GAP range identifier using
+the \code{GAP.RANGE} field associated with the supplied
+\code{alpha_code}. The corresponding shapefile is expected at
+\code{data/shapefiles/GAP_RANGE/GAP_RANGE.shp} under the project
+root, where \code{GAP_RANGE} is the value of that field.
 
-with fallback to:
-
-\code{<project_dir>/data/}
-\code{species.csv}
-
-The row where \code{ALPHA.CODE == alpha_code} is located and the
-corresponding \code{GAP.RANGE} value is extracted.
-
-The GAP range shapefile is then loaded from:
-
-\code{<project_dir>/data/shapefiles/}
-\code{<gap_range>/<gap_range>.shp}
-
-\strong{Methods}:
-The shapefile geometry is validated and its coordinate reference
-system (CRS) is checked. If necessary, the geometry is transformed to
-WGS84 (EPSG:4326).
-
-A bounding box is computed in longitude and latitude degrees and then
-adjusted using a symmetric padding factor defined by \code{pad_pct}.
-
-The padding is applied relative to the bounding box center. For
-example:
-\itemize{
-\item pad_pct = 2 expands width and height by 2 percent
-\item pad_pct = -2 contracts width and height by 2 percent
-}
-
-Values less than or equal to -100 are invalid.
-
-\strong{Outputs}:
-The resulting bounding box is written to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/extent.txt}
-
-Any existing extent.txt file is backed up prior to writing.
-
-The output file contains:
-\itemize{
-\item Upper-left:  (\if{html}{\out{<lon>}}, \if{html}{\out{<lat>}})
-\item Lower-right: (\if{html}{\out{<lon>}}, \if{html}{\out{<lat>}})
-}
-
-Coordinates are written in decimal degrees with six decimal places of
-precision.
-
-A processing summary is appended to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_log.txt}
-
-using the section title:
-
-\code{Processing summary (find_range_extent)}
-
-\strong{Workflow context}:
-This function is intended for workflows that rely on GAP range
-polygons to define spatial extents for downstream analyses. It can be
-used alongside occurrence-based preprocessing steps such as:
-\itemize{
-\item get_ebird_occurrences()
-\item remove_duplicate_occurrences()
-\item thin_occurrences() or thin_occurrences2()
-\item tidy_occurrences()
-}
-
-\strong{Data requirements}:
-The species CSV must contain:
-\itemize{
-\item ALPHA.CODE: species identifier
-\item GAP.RANGE: shapefile directory name
-}
-
-The shapefile must exist at the expected path and contain valid
-geometry.
+If the shapefile coordinate reference system is not longitude/latitude
+WGS84 (EPSG:4326), it is transformed before extent calculation.
+The resulting bounding box is symmetrically padded relative to its
+center using \code{pad_pct}. The result is written to
+\code{runs/ALPHA_CODE/_occs/extent.txt}.
 }
 \examples{
 \dontrun{
-  res <- find_range_extent("CASP", pad_pct = 2)
-  res
+res <- find_range_extent("CASP")
 
-  res_tight <- find_range_extent("CASP", pad_pct = -1)
+find_range_extent(
+  alpha_code = "CASP",
+  pad_pct = 5
+)
 }
 
+}
+\seealso{
+\code{\link{find_occurrence_extent}},
+\code{\link{set_extent}},
+\code{\link{get_merra_variables}}
 }

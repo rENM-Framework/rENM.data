@@ -2,98 +2,43 @@
 % Please edit documentation in R/data-remove_duplicate_occurrences.R
 \name{remove_duplicate_occurrences}
 \alias{remove_duplicate_occurrences}
-\title{Remove duplicate occurrence records from EBD occurrence datasets}
+\title{Remove duplicate occurrence records from per-bin CSV files}
 \usage{
 remove_duplicate_occurrences(alpha_code, project_dir = NULL)
 }
 \arguments{
-\item{alpha_code}{Character(1). Four-letter species alpha code
+\item{alpha_code}{Character scalar. Four-letter species alpha code
 (e.g., \code{"CASP"}).}
 
-\item{project_dir}{Character(1) or NULL. Optional project root directory.
-If NULL, resolved via \code{rENM_project_dir()}.}
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-Invisibly returns a list with:
-\itemize{
-\item \code{alpha_code}: Species alpha code
-\item \code{files_processed}: Character vector of processed file paths
-\item \code{duplicates_removed}: Named integer vector of counts removed per file
-\item \code{output_dir}: Directory containing cleaned occurrence files
-\item \code{log_file}: Path to the run log file
-}
+Invisibly returns a list with elements \code{alpha_code},
+\code{files_processed} (character vector of processed file paths),
+\code{duplicates_removed} (named integer vector of counts per file),
+\code{output_dir}, and \code{log_file}.
 }
 \description{
-Removes duplicate spatial records (longitude/latitude pairs) from
-per-bin occurrence CSV files generated during earlier rENM
-preprocessing steps.
-}
-\details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
-
-\strong{Inputs}:
-Occurrence files are read from:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/tmp/}
-
-Each file is expected to follow the naming pattern:
-
-\itemize{
-\item \code{of-<year>.csv}
-}
-
-and contain columns named \code{longitude} and \code{latitude}.
-
-\strong{Methods}:
-\itemize{
-\item Reads each per-bin CSV file
-\item Identifies duplicate rows based on identical longitude and latitude
-\item Retains the first occurrence of each unique coordinate pair
-\item Overwrites the original file with the de-duplicated dataset
-}
-
-Duplicate records are defined strictly as rows sharing identical
-longitude and latitude values.
-
-\strong{Outputs}:
-Cleaned occurrence files are written back to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/tmp/}
-
-replacing the original files.
-
-A processing summary is appended to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_log.txt}
-
-under the section:
-
-\code{Processing summary (remove_duplicate_occurrences)}
-
-\strong{Workflow context}:
-This function is typically used after temporal binning and prior to
-spatial thinning or modeling steps. It assumes that occurrence files
-have been created by \code{get_ebird_occurrences()} or equivalent
-preprocessing steps.
+Reads each per-bin occurrence CSV in \code{_occs/tmp/}, removes rows with
+identical longitude and latitude values (retaining the first occurrence of
+each unique coordinate pair), and overwrites the file in place.
 }
 \examples{
 \dontrun{
-  remove_duplicate_occurrences("CASP")
-
-  remove_duplicate_occurrences(
-    "CASP",
-    project_dir = "/projects/rENM"
-  )
+remove_duplicate_occurrences("CASP")
+remove_duplicate_occurrences("CASP", project_dir = "/projects/rENM")
 }
 
 }
 \seealso{
+\code{\link{get_ebird_occurrences}}, \code{\link{thin_occurrences}},
+\code{\link{tidy_occurrences}}
+
 Other occurrence processing: 
-\code{\link{limit_record_count}()}
+\code{\link{limit_record_count}()},
+\code{\link{thin_occurrences}()}
 }
 \concept{occurrence processing}

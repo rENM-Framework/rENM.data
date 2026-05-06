@@ -2,99 +2,55 @@
 % Please edit documentation in R/data-set_extent.R
 \name{set_extent}
 \alias{set_extent}
-\title{Set the spatial extent to be used in further model processing}
+\title{Set the spatial extent for a species run}
 \usage{
-set_extent(alpha_code, ul = c(-128, 49), lr = c(-66.5, 24))
+set_extent(alpha_code, ul = c(-128, 49), lr = c(-66.5, 24), project_dir = NULL)
 }
 \arguments{
-\item{alpha_code}{Character(1). Species alpha code used to locate the
-run directory under \code{<project_dir>/runs/<alpha_code>/}.}
+\item{alpha_code}{Character scalar. Four-letter species alpha code
+(e.g., \code{"CASP"}).}
 
-\item{ul}{Numeric(2). Upper-left corner (lon, lat) of the bounding box.
+\item{ul}{Numeric vector of length 2. Upper-left corner \code{c(lon, lat)}.
 Default \code{c(-128.0, 49.0)}.}
 
-\item{lr}{Numeric(2). Lower-right corner (lon, lat) of the bounding box.
+\item{lr}{Numeric vector of length 2. Lower-right corner \code{c(lon, lat)}.
 Default \code{c(-66.5, 24.0)}.}
+
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-Invisibly returns a list with:
-\itemize{
-\item \code{alpha_code}: Species code
-\item \code{extent}: List with \code{ul} and \code{lr} coordinate pairs
-\item \code{paths}: List with paths to \code{extent.txt} and log file
-\item \code{notes}: Character vector of orientation warnings or NULL
-}
+Invisibly returns a list with elements \code{alpha_code},
+\code{extent} (list with \code{ul} and \code{lr} named numeric vectors),
+\code{paths} (list with \code{extent} and \code{log} file paths), and
+\code{notes} (character vector of orientation warnings, or \code{NULL}).
 }
 \description{
-Create or update an \code{extent.txt} file for a species run,
-preserving the format expected by downstream functions.
+Writes an \code{extent.txt} file for a species run from explicit bounding
+box coordinates. Any existing \code{extent.txt} is renamed to a backup
+before writing. Use \code{\link{find_occurrence_extent}} or
+\code{\link{find_range_extent}} to derive the extent automatically from
+data rather than supplying coordinates manually.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+Coordinates are provided as upper-left and lower-right corners in
+(longitude, latitude) order. Non-canonical orientation (e.g., upper-left
+latitude below lower-right latitude) is reported as a warning but not
+corrected. Valid ranges are longitude -180 to 180 and latitude -90 to 90.
 
-\strong{Inputs}:
-The extent file is written to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/extent.txt}
-
-Coordinates are provided as:
-\itemize{
-\item \code{ul}: upper-left (lon, lat)
-\item \code{lr}: lower-right (lon, lat)
-}
-
-\strong{Methods}:
-\itemize{
-\item Validates coordinate structure and numeric ranges
-\item Checks for canonical orientation of bounding box corners
-\item Renames any existing \code{extent.txt} to a backup file
-\item Writes a new \code{extent.txt} using standardized formatting
-\item Appends a processing summary to the run log
-}
-
-Coordinates must satisfy:
-\itemize{
-\item longitude in (-180, 180)
-\item latitude in (-90, 90)
-}
-
-Orientation checks:
-\itemize{
-\item Upper-left latitude should exceed lower-right latitude
-\item Upper-left longitude should be less than lower-right longitude
-}
-
-Non-canonical orientation is reported but not corrected.
-
-\strong{Outputs}:
-The \code{extent.txt} file contains:
-
-\itemize{
-\item Header metadata (timestamp, source, coordinate order)
-\item Upper-left and lower-right coordinates in (lon, lat) format
-}
-
-Existing files are backed up as:
-
-\code{extent.txt.original}
-
-or a timestamped variant if a backup already exists.
-
-A processing summary is appended to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_log.txt}
-
-\strong{Data requirements}:
-Coordinates must be numeric length-2 vectors with finite values.
+An existing \code{extent.txt} is backed up as \code{extent.txt.original},
+or as a timestamped variant if a backup already exists.
 }
 \examples{
 \dontrun{
-  set_extent("CASP")
-  set_extent("AMRO", ul = c(-130, 55), lr = c(-60, 20))
+set_extent("CASP")
+set_extent("AMRO", ul = c(-130, 55), lr = c(-60, 20))
+set_extent("CASP", project_dir = "/projects/rENM")
 }
 
+}
+\seealso{
+\code{\link{find_occurrence_extent}}, \code{\link{find_range_extent}}
 }

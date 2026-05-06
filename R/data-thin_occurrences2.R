@@ -1,198 +1,152 @@
-#' Apply spatial thinning to occurrence records (parallel version)
+#' Apply spatial thinning to occurrence records (parallel)
 #'
-#' Applies spatial thinning and optional record capping to per-year
-#' occurrence CSV files using parallel processing, writing results
-#' back to disk in place for efficient large-scale preprocessing.
+#' Applies spatial thinning and optional record capping to per-bin occurrence
+#' CSV files using parallel execution via the \pkg{future} and
+#' \pkg{future.apply} packages. Files are overwritten in place. This is the
+#' parallel counterpart to \code{\link{thin_occurrences}} and is suited to
+#' larger datasets where per-bin files are numerous or large.
 #'
 #' @details
-#' This function is part of the rENM framework's processing pipeline
-#' and operates within the project directory structure defined by
-#' rENM_project_dir().
+#' \strong{Spatial thinning}
 #'
-#' \strong{Pipeline context}
-#' This function is the parallel counterpart to the serial thinning
-#' routine and is intended for larger species datasets where per-year
-#' files are numerous or large.
-#'
-#' Spatial thinning is typically applied after duplicate removal and
-#' prior to model fitting, reducing spatial clustering and sampling bias.
-#'
-#' \strong{Inputs}
-#' For a given species alpha code, the function looks for files named:
-#'
-#' \code{of-YYYY.csv}
-#'
-#' in:
-#'
-#' \code{rENM_project_dir()/runs/<alpha_code>/_occs/tmp/}
-#'
-#' Each file is expected to contain at least:
-#'
-#' \itemize{
-#'   \item species
-#'   \item longitude
-#'   \item latitude
-#' }
-#'
-#' Files with zero rows or missing coordinate columns are skipped.
-#'
-#' \strong{Outputs}
-#' Processed files are written back in place to:
-#'
-#' \code{rENM_project_dir()/runs/<alpha_code>/_occs/tmp/}
-#'
-#' Files are overwritten with thinned and optionally capped datasets.
-#'
-#' \strong{Methods}
-#' \strong{Spatial thinning (radius)}
-#'
-#' If radius > 0, a greedy nearest-neighbor filter is applied:
-#'
-#' \itemize{
-#'   \item The first point is always retained
-#'   \item Each subsequent point is retained only if it is at least
-#'   radius kilometers away from all previously retained points
-#'   \item Distances are computed using the Haversine formula
-#'   \item Earth radius is assumed to be 6371 km
-#' }
-#'
-#' The number of records surviving this step is reported as
-#' kept_after_radius.
+#' If \code{radius > 0}, a greedy Haversine nearest-neighbor filter is applied
+#' per file: the first point is always retained; each subsequent point is kept
+#' only if it is at least \code{radius} km from all previously retained points.
+#' Earth radius is assumed to be 6371 km. Set \code{radius = 0} to skip
+#' spatial thinning.
 #'
 #' \strong{Record cap}
 #'
-#' If records > 0, the number of rows is further capped to at most
-#' records per file using random down-sampling. The final row count is
-#' stored in kept_after_records, and the after column reports the final
-#' number of rows written back to disk.
+#' If \code{records > 0}, the thinned dataset is further randomly downsampled
+#' to at most \code{records} rows per file. Set \code{records = 0} to keep all
+#' rows surviving thinning.
 #'
 #' \strong{Parallel execution}
 #'
-#' Parallelism is handled by the future and future.apply packages using
-#' a multisession plan:
+#' Files are processed independently on separate workers using a
+#' \code{future::multisession} plan. If \code{workers} is \code{NULL}, all
+#' available logical cores are used. Both \pkg{future} and \pkg{future.apply}
+#' must be installed; the function stops with an informative error if they are
+#' not.
 #'
-#' \itemize{
-#'   \item If workers is NULL, the number of workers defaults to the
-#'   number of available logical cores (at least 1)
-#'   \item Each file is processed independently on a worker
-#'   \item Files are overwritten in place after processing
-#' }
+#' @param alpha_code Character scalar. Four-letter species alpha code
+#'   (e.g., \code{"CASP"}).
+#' @param radius Numeric scalar. Minimum separation distance in kilometers.
+#'   Use \code{0} to disable spatial thinning. Default is 1.
+#' @param records Integer scalar. Maximum records to retain per file after
+#'   thinning. Use \code{0} to keep all surviving records. Default is 250.
+#' @param workers Integer scalar or \code{NULL}. Number of parallel workers.
+#'   If \code{NULL} (default), all available logical cores are used.
+#' @param project_dir Character. Path to the rENM project root. If \code{NULL}
+#'   (default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+#'   (argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+#'   environment variable).
 #'
-#' Both future and future.apply must be installed and loadable; if not,
-#' the function stops with an informative error.
+#' @return Invisibly returns a data frame with one row per processed file and
+#'   columns \code{file} (file name), \code{before} (rows before thinning),
+#'   \code{kept_after_radius} (rows after spatial filter, or \code{NA} if
+#'   disabled), \code{kept_after_records} (rows after record cap, or
+#'   \code{NA} if not applied), and \code{after} (rows written to disk).
 #'
-#' \strong{Logging}
-#'
-#' A standardized processing summary is appended to:
-#'
-#' \code{rENM_project_dir()/runs/<alpha_code>/_log.txt}
-#'
-#' under the section title:
-#'
-#' "Processing summary (thin_occurrences2 parallel)"
-#'
-#' The log entry includes:
-#'
-#' \itemize{
-#'   \item number of files processed
-#'   \item total rows before and after thinning
-#'   \item total rows removed
-#'   \item number of files changed
-#'   \item thinning radius and records cap used
-#' }
-#'
-#' Centralizing project-directory resolution via
-#' \code{\link{rENM_project_dir}} ensures CRAN-compliant, portable
-#' behavior across systems.
-#'
-#' @param alpha_code Character. Four-letter species alpha code used to
-#' locate the run directory.
-#'
-#' @param radius Numeric. Minimum allowed distance between retained
-#' points in kilometers. Use 0 to disable spatial thinning.
-#'
-#' @param records Integer. Maximum number of records to keep per file
-#' after thinning. Use 0 to keep all available records.
-#'
-#' @param workers Integer, NULL. Number of parallel workers to use. If
-#' NULL, uses all available logical cores.
-#'
-#' @return
-#' Data frame. Invisibly returns a data frame with one row per processed
-#' file and columns:
-#'
-#' \describe{
-#'   \item{file}{Character. File name (e.g., "of-2015.csv").}
-#'   \item{before}{Integer. Number of rows before thinning.}
-#'   \item{kept_after_radius}{Integer. Rows retained after spatial
-#'   thinning, or NA if disabled or skipped.}
-#'   \item{kept_after_records}{Integer. Rows retained after applying the
-#'   records cap, or NA if no cap was applied.}
-#'   \item{after}{Integer. Number of rows written back to disk.}
-#' }
-#'
-#' Side effects:
-#' \itemize{
-#'   \item Overwrites occurrence CSV files with processed datasets
-#'   \item Applies spatial thinning and optional record capping
-#'   \item Executes processing in parallel across worker processes
-#'   \item Appends a processing summary to the log file
-#' }
+#' @seealso \code{\link{thin_occurrences}},
+#'   \code{\link{remove_duplicate_occurrences}},
+#'   \code{\link{tidy_occurrences}}
 #'
 #' @importFrom utils read.csv write.csv
 #' @importFrom parallel detectCores
 #'
 #' @examples
 #' \dontrun{
-#' out <- thin_occurrences2(
-#'   alpha_code = "CASP",
-#'   radius     = 10,
-#'   records    = 500,
-#'   workers    = NULL
-#' )
-#'
+#' out <- thin_occurrences2("CASP", radius = 10, records = 500)
 #' out
+#' thin_occurrences2("CASP", radius = 10, records = 500,
+#'                   project_dir = "/projects/rENM")
 #' }
 #'
 #' @export
-thin_occurrences2 <- function(alpha_code, radius = 1, records = 250, workers = NULL) {
+thin_occurrences2 <- function(alpha_code,
+                               radius     = 1,
+                               records    = 250,
+                               workers    = NULL,
+                               project_dir = NULL) {
 
-  ## ---- validation ----
-  stopifnot(is.character(alpha_code), length(alpha_code) == 1, nchar(alpha_code) > 0)
-  if (!is.numeric(radius) || length(radius) != 1 || is.na(radius) || radius < 0) {
-    stop("`radius` must be a single non-negative number (km).")
+  ## ---- validate -------------------------------------------------------------
+  if (!is.character(alpha_code) || length(alpha_code) != 1L || !nzchar(alpha_code)) {
+    stop("`alpha_code` must be a non-empty character scalar.", call. = FALSE)
   }
-  if (!is.numeric(records) || length(records) != 1 || is.na(records) || records < 0) {
-    stop("`records` must be a single non-negative number (count). Use 0 to keep all rows.")
+  if (!is.numeric(radius) || length(radius) != 1L || is.na(radius) || radius < 0) {
+    stop("`radius` must be a single non-negative number (km).", call. = FALSE)
   }
+  if (!is.numeric(records) || length(records) != 1L || is.na(records) || records < 0) {
+    stop("`records` must be a single non-negative number. Use 0 to keep all rows.", call. = FALSE)
+  }
+
   records <- as.integer(records)
 
-  ## ---- helpers ----
-  .expand   <- function(p) normalizePath(path.expand(p), winslash = "/", mustWork = FALSE)
-  .now      <- function() format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")
-  .sep_line <- function(width = 72L) paste(rep.int("-", width), collapse = "")
-  .catln    <- function(...) { cat(paste0(..., "\n")); flush.console() }
-
-  .write_log_section <- function(run_dir, title, lines) {
-    logfile <- file.path(run_dir, "_log.txt")
-    dir.create(run_dir, recursive = TRUE, showWarnings = FALSE)
-    section <- c(
-      "",
-      .sep_line(),
-      sprintf("%s", title),
-      sprintf("Timestamp: %s", .now()),
-      lines
+  ## ---- check parallel dependencies ------------------------------------------
+  if (!requireNamespace("future",       quietly = TRUE) ||
+      !requireNamespace("future.apply", quietly = TRUE)) {
+    stop(
+      "Packages 'future' and 'future.apply' are required for parallel thinning.\n",
+      "Install them with: install.packages(c('future', 'future.apply'))",
+      call. = FALSE
     )
-    cat(paste0(section, collapse = "\n"), file = logfile, append = TRUE)
-    cat("\n", file = logfile, append = TRUE)
-    logfile
   }
 
+  ## ---- paths ----------------------------------------------------------------
+  project_root <- rENM_project_dir(project_dir)
+  run_dir <- file.path(project_root, "runs", alpha_code)
+  tmp_dir <- file.path(run_dir, "_occs", "tmp")
+  log_fp  <- file.path(run_dir, "_log.txt")
+
+  if (!dir.exists(tmp_dir)) {
+    stop("Occurrence tmp directory not found: ", tmp_dir, call. = FALSE)
+  }
+
+  files <- list.files(tmp_dir, pattern = "^of-\\d{4}\\.csv$", full.names = TRUE)
+
+  ## ---- early exit if no files -----------------------------------------------
+  if (!length(files)) {
+    .catln("No of-<year>.csv files found in: ", tmp_dir)
+    .append_log(log_fp, "Processing summary (thin_occurrences2 parallel)", c(
+      sprintf("Alpha code:       %s", alpha_code),
+      sprintf("Target directory: %s", tmp_dir),
+      "Files discovered:  0",
+      sprintf("Radius (km):      %.3f (0 = no spatial thinning)", radius),
+      sprintf("Records cap:      %d (0 = keep all)", records),
+      "Action:            No files to process"
+    ))
+    return(invisible(data.frame(
+      file               = character(0),
+      before             = integer(0),
+      kept_after_radius  = integer(0),
+      kept_after_records = integer(0),
+      after              = integer(0),
+      stringsAsFactors   = FALSE
+    )))
+  }
+
+  ## ---- parallel setup -------------------------------------------------------
+  if (is.null(workers)) {
+    workers <- max(1L, parallel::detectCores(logical = TRUE))
+  }
+
+  old_plan <- future::plan()
+  on.exit(future::plan(old_plan), add = TRUE)
+  future::plan(future::multisession, workers = workers)
+
+  .catln(.sep_line())
+  .catln(sprintf("thin_occurrences2: alpha_code=%s", alpha_code))
+  .catln(sprintf("Files: %d | Workers: %d", length(files), workers))
+  .catln(sprintf("Radius: %.3f km | Records cap: %d", radius, records))
+  .catln(.sep_line())
+
+  ## ---- Haversine filter (defined here for worker export) --------------------
   .haversine_km <- function(lon1, lat1, lon2, lat2) {
-    rad <- pi / 180
+    rad  <- pi / 180
     dlat <- (lat2 - lat1) * rad
     dlon <- (lon2 - lon1) * rad
-    a <- sin(dlat/2)^2 + cos(lat1 * rad) * cos(lat2 * rad) * sin(dlon/2)^2
+    a    <- sin(dlat / 2)^2 + cos(lat1 * rad) * cos(lat2 * rad) * sin(dlon / 2)^2
     2 * 6371 * asin(pmin(1, sqrt(a)))
   }
 
@@ -201,8 +155,8 @@ thin_occurrences2 <- function(alpha_code, radius = 1, records = 250, workers = N
     if (n == 0L || radius_km <= 0) return(seq_len(n))
     keep_idx <- integer(0)
     for (i in seq_len(n)) {
-      if (length(keep_idx) == 0L) {
-        keep_idx <- c(keep_idx, i)
+      if (!length(keep_idx)) {
+        keep_idx <- i
       } else {
         d <- .haversine_km(lon[i], lat[i], lon[keep_idx], lat[keep_idx])
         if (all(d >= radius_km)) keep_idx <- c(keep_idx, i)
@@ -211,87 +165,66 @@ thin_occurrences2 <- function(alpha_code, radius = 1, records = 250, workers = N
     keep_idx
   }
 
-  ## ---- paths ----
-  project_dir <- rENM_project_dir()
-  run_dir <- file.path(project_dir, "runs", alpha_code)
-  tmp_dir <- file.path(run_dir, "_occs", "tmp")
-
-  if (!dir.exists(tmp_dir)) stop("Occurrences tmp directory not found: ", tmp_dir)
-
-  files <- list.files(tmp_dir, pattern = "^of-\\d{4}\\.csv$", full.names = TRUE)
-
-  ## ---- remainder unchanged ----
-  # (everything below remains exactly as your original implementation)
-
-  if (length(files) == 0L) {
-    .catln("No of-<year>.csv files found in: ", tmp_dir)
-    used_log <- .write_log_section(
-      run_dir,
-      "Processing summary (thin_occurrences2 parallel)",
-      c(
-        sprintf("Alpha code:       %s", alpha_code),
-        sprintf("Target directory: %s", tmp_dir),
-        "Files discovered:  0",
-        sprintf("Radius (km):      %.3f (0 = no spatial thinning)", radius),
-        sprintf("Records cap:      %d (0 = keep all records)", records),
-        "Action:            No files to process"
-      )
-    )
-    .catln("Log updated: ", used_log)
-    return(invisible(data.frame(file = character(0), before = integer(0), after = integer(0))))
-  }
-
-  if (is.null(workers)) {
-    workers <- max(1L, parallel::detectCores(logical = TRUE))
-  }
-
-  if (!requireNamespace("future", quietly = TRUE) ||
-      !requireNamespace("future.apply", quietly = TRUE)) {
-    stop("Please install packages 'future' and 'future.apply' to use the parallel version.")
-  }
-
-  old_plan <- future::plan()
-  on.exit(future::plan(old_plan), add = TRUE)
-  future::plan(future::multisession, workers = workers)
-
-  .catln(sprintf("Found %d file(s). Starting parallel thinning on %d worker(s)...", length(files), workers))
-  .catln(sprintf("Settings - radius: %.3f km (0 = none), records cap: %d (0 = keep all)", radius, records))
-
+  ## ---- parallel processing --------------------------------------------------
   res_list <- future.apply::future_lapply(
     files,
     future.seed = TRUE,
     FUN = function(f) {
 
-      messages <- character(0)
-      add_msg <- function(x) messages <<- c(messages, x)
-
-      add_msg(sprintf("  * Reading: %s", f))
       df <- utils::read.csv(f, stringsAsFactors = FALSE, check.names = FALSE)
 
       required <- c("species", "longitude", "latitude")
       missing  <- setdiff(required, names(df))
-      if (length(missing) > 0) stop("Missing columns: ", paste(missing, collapse = ", "))
-
-      n_before <- nrow(df)
-
-      if (radius > 0 && n_before > 1) {
-        idx_keep <- .thin_by_radius(df$longitude, df$latitude, radius)
-        df <- df[idx_keep, , drop = FALSE]
+      if (length(missing)) {
+        stop("Missing columns in ", basename(f), ": ", paste(missing, collapse = ", "))
       }
 
-      if (records > 0 && nrow(df) > records) {
-        df <- df[sample(seq_len(nrow(df)), records), , drop = FALSE]
+      n_before          <- nrow(df)
+      kept_after_radius <- NA_integer_
+
+      if (radius > 0 && n_before > 1L) {
+        idx_keep          <- .thin_by_radius(df$longitude, df$latitude, radius)
+        df                <- df[idx_keep, , drop = FALSE]
+        kept_after_radius <- nrow(df)
+      }
+
+      kept_after_records <- NA_integer_
+
+      if (records > 0L && nrow(df) > records) {
+        df                 <- df[sample(seq_len(nrow(df)), records), , drop = FALSE]
+        kept_after_records <- nrow(df)
       }
 
       utils::write.csv(df, f, row.names = FALSE)
 
       list(
-        file = basename(f),
-        before = n_before,
-        after = nrow(df)
+        file               = basename(f),
+        before             = n_before,
+        kept_after_radius  = kept_after_radius,
+        kept_after_records = kept_after_records,
+        after              = nrow(df)
       )
     }
   )
 
-  invisible(res_list)
+  ## ---- assemble result data frame -------------------------------------------
+  out_df <- do.call(rbind, lapply(res_list, as.data.frame, stringsAsFactors = FALSE))
+  rownames(out_df) <- NULL
+
+  ## ---- log ------------------------------------------------------------------
+  .append_log(log_fp, "Processing summary (thin_occurrences2 parallel)", c(
+    sprintf("Alpha code:       %s", alpha_code),
+    sprintf("Target directory: %s", tmp_dir),
+    sprintf("Files processed:  %d", nrow(out_df)),
+    sprintf("Radius (km):      %.3f (0 = no spatial thinning)", radius),
+    sprintf("Records cap:      %d (0 = keep all)", records),
+    sprintf("Workers:          %d", workers),
+    sprintf("Total before:     %d", sum(out_df$before)),
+    sprintf("Total after:      %d", sum(out_df$after))
+  ))
+
+  .catln("Done. Log updated: ", log_fp)
+  .catln(.sep_line())
+
+  invisible(out_df)
 }

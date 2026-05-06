@@ -2,113 +2,71 @@
 % Please edit documentation in R/data-get_ebird_occurrences.R
 \name{get_ebird_occurrences}
 \alias{get_ebird_occurrences}
-\title{Read and process an eBird EBD occurrence record file}
+\title{Read and bin an eBird EBD occurrence file by species}
 \usage{
 get_ebird_occurrences(alpha_code, project_dir = NULL)
 }
 \arguments{
-\item{alpha_code}{Character. Four-letter species code.}
+\item{alpha_code}{Character scalar. Four-letter species alpha code
+(e.g., \code{"CASP"}).}
 
-\item{project_dir}{Character, NULL. Optional project root directory.
-If NULL, resolved using \code{rENM_project_dir()} via options or
-environment variables.}
+\item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
+(default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
+(argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
+environment variable).}
 }
 \value{
-Invisibly returns a List with the following components:
-\itemize{
-\item csv_copy: File path to the cleaned CSV
-\item bin_dir: Directory containing per-bin CSV files
-\item bin_files: Character vector of per-bin file paths
-\item log_file: File path to the run log
-\item n_read: Integer number of rows read from the EBD file
-\item n_valid: Integer number of valid coordinate rows
-\item total_written: Integer total rows written across all bins
-}
-
-Side effects:
-\itemize{
-\item Writes cleaned CSV and per-bin files to disk
-\item Creates directories as needed
-\item Appends a processing summary to the run log
-\item Writes progress messages to the console
-}
+Invisibly returns a list with elements \code{csv_copy} (path to
+cleaned CSV), \code{bin_dir} (tmp directory), \code{bin_files} (character
+vector of per-bin file paths), \code{log_file}, \code{n_read} (rows read
+from EBD), \code{n_valid} (rows with valid coordinates), and
+\code{total_written} (rows written across all bins).
 }
 \description{
-Extracts occurrence records for a single species from an eBird
-Basic Dataset (EBD) text file, filters valid coordinates, and
-organizes the data into temporal bins for rENM workflows.
+Reads a species' eBird Basic Dataset (EBD) text file, filters records to
+valid coordinates, writes a cleaned CSV copy, and organizes records into
+5-year temporal bins for use in rENM workflows.
 }
 \details{
-This function is part of the rENM framework's processing pipeline
-and operates within the project directory structure defined by
-rENM_project_dir().
+\strong{Input location}
 
-\strong{Inputs}:
-The EBD text file is located at:
+The EBD text file is located using the \code{EBD.RECORDS} field returned
+by \code{\link[rENM.core]{get_species_info}}:
 
-\code{<project_dir>/data/ebird/<ebd_dataset>/}
-\code{<ebd_dataset>.txt}
+\code{PROJECT_DIR/data/ebird/EBD_DATASET/EBD_DATASET.txt}
 
-where <ebd_dataset> is obtained from \code{get_species_info()} via
-the EBD.RECORDS field.
+\strong{Coordinate filtering}
 
-\strong{Methods}:
-The function performs the following steps:
-\itemize{
-\item Reads the EBD text file using streaming input
-\item Filters records to valid decimal-degree coordinates
-\item Writes a cleaned CSV copy to the _occs directory
-\item Parses observation dates into years
-\item Assigns records to 5-year bins spanning 1980 to 2024
-\item Writes one CSV file per bin to the _occs/tmp directory
-}
+Longitude and latitude columns are detected automatically using common
+aliases. Records are retained only if coordinates are numeric, within valid
+ranges (longitude -180 to 180, latitude -90 to 90),
+and not exactly (0, 0). Duplicate records are retained at this stage.
 
-Longitude and latitude columns are automatically detected using
-common aliases. Coordinates are converted to numeric and filtered
-to valid ranges:
-\itemize{
-\item longitude in (-180, 180)
-\item latitude in (-90, 90)
-\item excludes (0, 0) coordinates
-}
+\strong{Temporal binning}
 
-Duplicate records are retained.
+Observation dates are parsed to years and assigned to 5-year bins spanning
+1980 to 2024 (1980, 1985, ..., 2020). Records outside this range are
+dropped. One CSV file per bin is written to \code{_occs/tmp/} with the
+naming pattern \code{of-YEAR.csv}, containing \code{species},
+\code{longitude}, and \code{latitude} columns.
 
-\strong{Outputs}:
-A cleaned CSV copy is written to:
+\strong{Outputs}
 
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/<ebd_dataset>.csv}
-
-Per-bin occurrence files are written to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_occs/tmp/}
-
-with filenames:
-
-\itemize{
-\item of-\if{html}{\out{<year>}}.csv
-}
-
-A processing summary is appended to:
-
-\code{<project_dir>/runs/<alpha_code>/}
-\code{_log.txt}
-
-using the section title:
-
-\code{Processing summary (get_ebird_occurrences)}
-
-\strong{Data requirements}:
-The EBD file must contain longitude, latitude, and date columns or
-recognizable aliases. At least one valid coordinate record must be
-present.
+A cleaned copy of the full EBD file is written to
+\code{RUN_DIR/_occs/EBD_DATASET.csv}. Per-bin files go to
+\code{RUN_DIR/_occs/tmp/}. A processing summary is appended to
+\code{RUN_DIR/_log.txt}.
 }
 \examples{
 \dontrun{
-  occ <- get_ebird_occurrences("CASP")
-  utils::head(occ$csv_copy)
+occ <- get_ebird_occurrences("CASP")
+occ <- get_ebird_occurrences("CASP", project_dir = "/projects/rENM")
 }
 
+}
+\seealso{
+\code{\link[rENM.core]{rENM_project_dir}},
+\code{\link[rENM.core]{get_species_info}},
+\code{\link{remove_duplicate_occurrences}},
+\code{\link{thin_occurrences}}, \code{\link{tidy_occurrences}}
 }
