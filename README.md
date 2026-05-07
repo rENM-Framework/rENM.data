@@ -1,25 +1,19 @@
 # rENM.data
 
-![rENM](https://img.shields.io/badge/rENM-framework-blue)
-![module](https://img.shields.io/badge/module-data-informational)
+![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-data-informational)
 
 **Data assembly and preprocessing for the rENM Framework**
 
 ## Overview
 
-`rENM.data` provides standardized workflows for assembling, cleaning, and
-preparing the input datasets used in rENM analyses. It handles species
-occurrence data from eBird and environmental predictors from MERRA-2,
-producing consistent, analysis-ready inputs for downstream modeling.
+`rENM.data` provides standardized workflows for assembling, cleaning, and preparing the input datasets used in rENM analyses. It handles species occurrence data from eBird and environmental predictors from MERRA-2, producing consistent, analysis-ready inputs for downstream modeling.
 
-This package depends on `rENM.core` for project-directory resolution and
-species metadata access. All functions accept an optional `project_dir`
-argument; see `?rENM_project_dir` for configuration options.
+This package depends on `rENM.core` for project-directory resolution and species metadata access. All functions accept an optional `project_dir` argument; see `?rENM_project_dir` for configuration options.
 
 ## Key functions
 
 | Function | Description |
-|---|---|
+|------------------------------------|------------------------------------|
 | `set_up_run()` | Initialize the directory structure for a species run |
 | `get_ebird_occurrences()` | Read and bin an eBird EBD file into 5-year temporal bins |
 | `remove_duplicate_occurrences()` | Remove exact-coordinate duplicate records |
@@ -34,7 +28,7 @@ argument; see `?rENM_project_dir` for configuration options.
 
 ## Installation
 
-```r
+``` r
 # From GitHub
 devtools::install_github("rENM-Framework/rENM.data")
 
@@ -44,10 +38,9 @@ devtools::install_local("rENM.data")
 
 ## Getting started
 
-Set up a project directory first (see `rENM.core`), then run the occurrence
-preprocessing pipeline in order:
+Set up a project directory first (see `rENM.core`), then run the occurrence preprocessing pipeline in order:
 
-```r
+``` r
 library(rENM.data)
 
 proj <- "/path/to/your/rENM/project"
@@ -73,10 +66,9 @@ find_occurrence_extent("CASP", bbox_pct = 99, project_dir = proj)
 get_merra_variables("CASP", project_dir = proj)
 ```
 
-For interactive work, configure the project directory once per session to
-avoid passing it to every function:
+For interactive work, configure the project directory once per session to avoid passing it to every function:
 
-```r
+``` r
 options(rENM.project_dir = "/path/to/your/rENM/project")
 
 set_up_run("CASP")
@@ -86,7 +78,7 @@ get_ebird_occurrences("CASP")
 
 ## Occurrence preprocessing pipeline
 
-```
+```         
 get_ebird_occurrences()
         ↓
 remove_duplicate_occurrences()
@@ -98,36 +90,30 @@ limit_record_count()          (optional)
 tidy_occurrences()
 ```
 
-Each step reads from and writes to `<run_dir>/_occs/tmp/`. `tidy_occurrences()`
-moves the final files to `<run_dir>/_occs/` and removes the staging directory.
+Each step reads from and writes to `<run_dir>/_occs/tmp/`. `tidy_occurrences()` moves the final files to `<run_dir>/_occs/` and removes the staging directory.
 
 ## Spatial extent
 
-Three functions produce the `extent.txt` file required by
-`get_merra_variables()`. Use whichever fits your workflow:
+Three functions produce the `extent.txt` file required by `get_merra_variables()`. Use whichever fits your workflow:
 
-- `find_occurrence_extent()` — derives extent from the species' occurrence
-  records using a centered percentile bounding box
-- `find_range_extent()` — derives extent from a USGS GAP range polygon with
-  optional symmetric padding
-- `set_extent()` — sets extent from explicit bounding box coordinates
+-   `find_occurrence_extent()` — derives extent from the species' occurrence records using a centered percentile bounding box
+-   `find_range_extent()` — derives extent from a USGS GAP range polygon with optional symmetric padding
+-   `set_extent()` — sets extent from explicit bounding box coordinates
 
 ## Role in the rENM framework
 
 `rENM.data` is the second stage in the pipeline:
 
-```
+```         
 rENM.core → rENM.data → rENM.model → rENM.analysis → rENM.ai → rENM.reports
 ```
 
-It produces the run directory structure, occurrence files, and cropped
-predictor rasters consumed by `rENM.model`.
+It produces the run directory structure, occurrence files, and cropped predictor rasters consumed by `rENM.model`.
 
 ## License
 
 See `LICENSE` for details.
 
----
+------------------------------------------------------------------------
 
-**rENM Framework** — A modular system for reconstructing and analyzing
-long-term ecological niche dynamics.
+**rENM Framework** — A modular system for reconstructing and analyzing long-term ecological niche dynamics.
