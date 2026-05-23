@@ -37,8 +37,8 @@ remove_duplicate_occurrences("CASP", project_dir = "/projects/rENM")
 \code{\link{get_ebird_occurrences}}, \code{\link{thin_occurrences}},
 \code{\link{tidy_occurrences}}
 
-Other occurrence processing: 
-\code{\link{limit_record_count}()},
-\code{\link{thin_occurrences}()}
+Other occurrence processing:
+\code{\link[=limit_record_count]{limit_record_count()}},
+\code{\link[=thin_occurrences]{thin_occurrences()}}
 }
 \concept{occurrence processing}

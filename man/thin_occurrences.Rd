@@ -51,8 +51,8 @@ thin_occurrences("CASP", thin_distance = 10, project_dir = "/projects/rENM")
 \code{\link{remove_duplicate_occurrences}},
 \code{\link{tidy_occurrences}}
 
-Other occurrence processing: 
-\code{\link{limit_record_count}()},
-\code{\link{remove_duplicate_occurrences}()}
+Other occurrence processing:
+\code{\link[=limit_record_count]{limit_record_count()}},
+\code{\link[=remove_duplicate_occurrences]{remove_duplicate_occurrences()}}
 }
 \concept{occurrence processing}
