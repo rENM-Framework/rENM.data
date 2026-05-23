@@ -1,13 +1,13 @@
 Package: rENM.data
 Type: Package
-Title: Data assembly tools for the rENM framework
+Title: Data assembly tools for the rENM Framework
 Version: 0.1.0.9000
 Authors@R: person(given = "John L.", family = "Schnase",
     email = "rENM.Framework@gmail.com",
     role = c("aut", "cre"),
     comment = c(ORCID = "0000-0001-7473-3977"))
 Description: Provides data acquisition and preparation tools for the
-    rENM framework, including extraction of eBird occurrence records and
+    rENM Framework, including extraction of eBird occurrence records and
     MERRA-2 environmental variables, spatial thinning, record limiting,
     extent determination, and temporal binning into five-year intervals.
 Depends: R (>= 4.1.0)
@@ -26,3 +26,4 @@ Imports:
     tools,
     utils
 Config/roxygen2/version: 8.0.0
+

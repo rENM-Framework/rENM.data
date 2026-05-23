@@ -96,11 +96,11 @@ Each step reads from and writes to `<run_dir>/_occs/tmp/`. `tidy_occurrences()` 
 
 Three functions produce the `extent.txt` file required by `get_merra_variables()`. Use whichever fits your workflow:
 
--   `find_occurrence_extent()` — derives extent from the species' occurrence records using a centered percentile bounding box
--   `find_range_extent()` — derives extent from a USGS GAP range polygon with optional symmetric padding
--   `set_extent()` — sets extent from explicit bounding box coordinates
+- `find_occurrence_extent()` — derives extent from the species' occurrence records using a centered percentile bounding box
+- `find_range_extent()` — derives extent from a USGS GAP range polygon with optional symmetric padding
+- `set_extent()` — sets extent from explicit bounding box coordinates
 
-## Role in the rENM framework
+## Role in the rENM Framework
 
 `rENM.data` is the second stage in the pipeline:
 
