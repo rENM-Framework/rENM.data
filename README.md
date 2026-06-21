@@ -30,10 +30,10 @@ This package depends on `rENM.core` for project-directory resolution and species
 
 ``` r
 # From GitHub
-devtools::install_github("rENM-Framework/rENM.data")
+remotes::install_github("rENM-Framework/rENM.data")
 
 # From a local source directory
-devtools::install_local("rENM.data")
+remotes::install_local("rENM.data")
 ```
 
 ## Getting started

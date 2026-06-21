@@ -1,7 +1,7 @@
 Package: rENM.data
 Type: Package
 Title: Data assembly tools for the rENM Framework
-Version: 0.1.0.9000
+Version: 0.1.0
 Authors@R: person(given = "John L.", family = "Schnase",
     email = "rENM.Framework@gmail.com",
     role = c("aut", "cre"),
@@ -20,6 +20,7 @@ Imports:
     rENM.core,
     future,
     future.apply,
+    parallel,
     sf,
     stats,
     terra,
