@@ -1,6 +1,6 @@
 # rENM.data
 
-![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-data-informational)
+![rENM](https://img.shields.io/badge/rENM-framework-blue) ![module](https://img.shields.io/badge/module-data-informational) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.20789477.svg)](https://doi.org/10.5281/zenodo.20789477)
 
 **Data assembly and preprocessing for the rENM Framework**
 
@@ -13,7 +13,7 @@ This package depends on `rENM.core` for project-directory resolution and species
 ## Key functions
 
 | Function | Description |
-|------------------------------------|------------------------------------|
+|----|----|
 | `set_up_run()` | Initialize the directory structure for a species run |
 | `get_ebird_occurrences()` | Read and bin an eBird EBD file into 5-year temporal bins |
 | `remove_duplicate_occurrences()` | Remove exact-coordinate duplicate records |
