@@ -9,7 +9,7 @@
 #'
 #' The bounding box is computed by selecting the central \code{bbox_pct}
 #' percent of valid points along each axis independently, discarding symmetric
-#' tails. For example, \code{bbox_pct = 95} uses the 2.5th and 97.5th
+#' tails. For example, \code{bbox_pct = 90} uses the 5th and 95th
 #' quantiles; \code{bbox_pct = 100} uses the full coordinate range.
 #'
 #' \strong{Coordinate validation}
@@ -18,8 +18,11 @@
 #' from common aliases (\code{longitude}/\code{lon}/\code{x} and
 #' \code{latitude}/\code{lat}/\code{y}). Values are coerced to numeric;
 #' records outside the valid range (longitude -180 to 180, latitude -90 to 90)
-#' or exactly at (0, 0)
-#' are excluded. All surviving coordinates are pooled before quantile
+#' or exactly at (0, 0) are excluded. Records are further restricted to the 
+#' Continental United States (CONUS), i.e. the bounding box with Upper Left (UL)
+#' -125.0 degrees longitude, 49.0 degrees latitude and Lower Right (LR) -66.5
+#' degrees longitude, 24.5 degrees latitude; records outside this box are
+#' excluded. All surviving coordinates are pooled before quantile
 #' computation.
 #'
 #' This function is typically called after \code{\link{tidy_occurrences}} has
@@ -28,7 +31,7 @@
 #' @param alpha_code Character scalar. Four-letter species alpha code
 #'   (e.g., \code{"CASP"}).
 #' @param bbox_pct Numeric scalar. Central percentage of points to include in
-#'   the bounding box. Must be in (0, 100]. Default is 99.
+#'   the bounding box. Must be in (0, 100]. Default is 90.
 #' @param project_dir Character. Path to the rENM project root. If \code{NULL}
 #'   (default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
 #'   (argument, \code{rENM.project_dir} option, \code{RENM_PROJECT_DIR}
@@ -56,7 +59,7 @@
 #' }
 #'
 #' @export
-find_occurrence_extent <- function(alpha_code, bbox_pct = 99, project_dir = NULL) {
+find_occurrence_extent <- function(alpha_code, bbox_pct = 90, project_dir = NULL) {
 
   ## ---- validate -------------------------------------------------------------
   if (!is.character(alpha_code) || length(alpha_code) != 1L || !nzchar(alpha_code)) {
@@ -66,6 +69,14 @@ find_occurrence_extent <- function(alpha_code, bbox_pct = 99, project_dir = NULL
       bbox_pct <= 0 || bbox_pct > 100) {
     stop("`bbox_pct` must be a finite numeric scalar in (0, 100].", call. = FALSE)
   }
+
+  ## ---- CONUS bounding box -----------------------------------------------
+  ## Upper Left (UL): -125.0 Longitude, 49.0 Latitude
+  ## Lower Right (LR): -66.5 Longitude, 24.5 Latitude
+  conus_lon_min <- -125.0
+  conus_lon_max <- -66.5
+  conus_lat_min <- 24.5
+  conus_lat_max <- 49.0
 
   ## ---- paths ----------------------------------------------------------------
   project_root <- rENM_project_dir(project_dir)
@@ -84,6 +95,8 @@ find_occurrence_extent <- function(alpha_code, bbox_pct = 99, project_dir = NULL
   .catln(.sep_line())
   .catln(sprintf("find_occurrence_extent: alpha_code=%s | bbox_pct=%.2f%%",
                  alpha_code, bbox_pct))
+  .catln(sprintf("Restricting to CONUS: UL (%.1f, %.1f) | LR (%.1f, %.1f)",
+                 conus_lon_min, conus_lat_max, conus_lon_max, conus_lat_min))
   .catln("Scanning: ", occs_dir)
   .catln(sprintf("Found %d file(s): %s", length(files),
                  paste(basename(files), collapse = ", ")))
@@ -117,7 +130,9 @@ find_occurrence_extent <- function(alpha_code, bbox_pct = 99, project_dir = NULL
     ok <- is.finite(lon) & is.finite(lat) &
       lon >= -180 & lon <= 180 &
       lat >=  -90 & lat <=  90 &
-      !(lon == 0 & lat == 0)
+      !(lon == 0 & lat == 0) &
+      lon >= conus_lon_min & lon <= conus_lon_max &
+      lat >= conus_lat_min & lat <= conus_lat_max
 
     all_lon   <- c(all_lon, lon[ok])
     all_lat   <- c(all_lat, lat[ok])
@@ -152,6 +167,8 @@ find_occurrence_extent <- function(alpha_code, bbox_pct = 99, project_dir = NULL
     sprintf("# Source: %d file(s) in _occs/", length(files)),
     sprintf("# Points used: %d of %d total rows", used_rows, total_rows),
     sprintf("# bbox_pct: %.2f%% (centered percentile box)", bbox_pct),
+    sprintf("# CONUS restriction: UL (%.1f, %.1f) | LR (%.1f, %.1f)",
+            conus_lon_min, conus_lat_max, conus_lon_max, conus_lat_min),
     "# Coordinate order: (lon, lat)",
     sprintf("Upper-left:  (%.6f, %.6f)", lon_min, lat_max),
     sprintf("Lower-right: (%.6f, %.6f)", lon_max, lat_min)
@@ -165,6 +182,8 @@ find_occurrence_extent <- function(alpha_code, bbox_pct = 99, project_dir = NULL
   .append_log(log_fp, "Processing summary (find_occurrence_extent)", c(
     sprintf("Alpha code:        %s", alpha_code),
     sprintf("Bounding box pct:  %.2f%%", bbox_pct),
+    sprintf("CONUS restriction: UL (%.1f, %.1f) | LR (%.1f, %.1f)",
+            conus_lon_min, conus_lat_max, conus_lon_max, conus_lat_min),
     sprintf("Files scanned:     %d", length(files)),
     sprintf("Rows read (total): %d", total_rows),
     sprintf("Points used:       %d", used_rows),

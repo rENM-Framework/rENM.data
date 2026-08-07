@@ -4,14 +4,14 @@
 \alias{find_occurrence_extent}
 \title{Derive a spatial extent from occurrence data}
 \usage{
-find_occurrence_extent(alpha_code, bbox_pct = 99, project_dir = NULL)
+find_occurrence_extent(alpha_code, bbox_pct = 90, project_dir = NULL)
 }
 \arguments{
 \item{alpha_code}{Character scalar. Four-letter species alpha code
 (e.g., \code{"CASP"}).}
 
 \item{bbox_pct}{Numeric scalar. Central percentage of points to include in
-the bounding box. Must be in (0, 100]. Default is 99.}
+the bounding box. Must be in (0, 100]. Default is 90.}
 
 \item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
 (default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
@@ -35,7 +35,7 @@ result to \code{_occs/extent.txt} for use in downstream rENM workflows.
 
 The bounding box is computed by selecting the central \code{bbox_pct}
 percent of valid points along each axis independently, discarding symmetric
-tails. For example, \code{bbox_pct = 95} uses the 2.5th and 97.5th
+tails. For example, \code{bbox_pct = 90} uses the 5th and 95th
 quantiles; \code{bbox_pct = 100} uses the full coordinate range.
 
 \strong{Coordinate validation}
@@ -44,8 +44,11 @@ For each file, longitude and latitude columns are detected automatically
 from common aliases (\code{longitude}/\code{lon}/\code{x} and
 \code{latitude}/\code{lat}/\code{y}). Values are coerced to numeric;
 records outside the valid range (longitude -180 to 180, latitude -90 to 90)
-or exactly at (0, 0)
-are excluded. All surviving coordinates are pooled before quantile
+or exactly at (0, 0) are excluded. Records are further restricted to the
+Continental United States (CONUS), i.e. the bounding box with Upper Left (UL)
+-125.0 degrees longitude, 49.0 degrees latitude and Lower Right (LR) -66.5
+degrees longitude, 24.5 degrees latitude; records outside this box are
+excluded. All surviving coordinates are pooled before quantile
 computation.
 
 This function is typically called after \code{\link{tidy_occurrences}} has

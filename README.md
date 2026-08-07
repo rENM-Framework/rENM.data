@@ -60,7 +60,7 @@ limit_record_count("CASP", record_count = 250, project_dir = proj)
 tidy_occurrences("CASP", project_dir = proj)
 
 # 5. Derive spatial extent from occurrence data
-find_occurrence_extent("CASP", bbox_pct = 99, project_dir = proj)
+find_occurrence_extent("CASP", bbox_pct = 90, project_dir = proj)
 
 # 6. Crop MERRA-2 predictors to the species extent
 get_merra_variables("CASP", project_dir = proj)
@@ -96,7 +96,7 @@ Each step reads from and writes to `<run_dir>/_occs/tmp/`. `tidy_occurrences()` 
 
 Three functions produce the `extent.txt` file required by `get_merra_variables()`. Use whichever fits your workflow:
 
-- `find_occurrence_extent()` — derives extent from the species' occurrence records using a centered percentile bounding box
+- `find_occurrence_extent()` — derives extent from the species' occurrence records restricted to the Continental United States (CONUS), using a centered percentile bounding box
 - `find_range_extent()` — derives extent from a USGS GAP range polygon with optional symmetric padding
 - `set_extent()` — sets extent from explicit bounding box coordinates
 

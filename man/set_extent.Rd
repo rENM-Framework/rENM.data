@@ -4,17 +4,22 @@
 \alias{set_extent}
 \title{Set the spatial extent for a species run}
 \usage{
-set_extent(alpha_code, ul = c(-128, 49), lr = c(-66.5, 24), project_dir = NULL)
+set_extent(
+  alpha_code,
+  ul = c(-124.8, 49.4),
+  lr = c(-66.9, 24.5),
+  project_dir = NULL
+)
 }
 \arguments{
 \item{alpha_code}{Character scalar. Four-letter species alpha code
 (e.g., \code{"CASP"}).}
 
 \item{ul}{Numeric vector of length 2. Upper-left corner \code{c(lon, lat)}.
-Default \code{c(-128.0, 49.0)}.}
+Default \code{c(-128.4, 49.4} CONUS.}
 
 \item{lr}{Numeric vector of length 2. Lower-right corner \code{c(lon, lat)}.
-Default \code{c(-66.5, 24.0)}.}
+Default \code{c(-66.9, 24.5)} CONUS.}
 
 \item{project_dir}{Character. Path to the rENM project root. If \code{NULL}
 (default), resolved via \code{\link[rENM.core]{rENM_project_dir}}
