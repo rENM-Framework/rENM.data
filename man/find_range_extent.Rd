@@ -4,16 +4,35 @@
 \alias{find_range_extent}
 \title{Derive a spatial extent from a species USGS GAP range polygon}
 \usage{
-find_range_extent(alpha_code, pad_pct = 2, project_dir = NULL)
+find_range_extent(alpha_code, buffer_km = 250, project_dir = NULL)
 }
 \arguments{
 \item{alpha_code}{Character scalar. Four-letter species alpha code
 matching the \code{ALPHA.CODE} field in the project species table.}
 
-\item{pad_pct}{Numeric scalar. Symmetric percent padding applied to
-the bounding box. Positive values expand the extent and negative
-values contract it. Must be greater than -100. Default is
-\code{2}.}
+\item{buffer_km}{Numeric scalar. Outward buffer applied to the GAP
+range polygon, in kilometers, before its bounding box is taken.
+Must be non-negative. Default is \code{250}.
+
+The default is a single fixed distance applied uniformly across all
+species rather than sized per species. Sizing it from a species' own
+computed centroid velocity would be circular, since that velocity is
+an output of the analysis rather than a known input to it. The 250 km
+figure derives from Huang, Sauer & Dubayah (2017), who tracked the
+abundance-weighted geographic centroid of 57 permanent resident North
+American bird species over 44 years using Breeding Bird Survey data
+and found an average, multidirectional centroid velocity of
+5.89 km/yr; projected across rENM's 45-year study window that gives
+approximately 265 km, and 250 km is used as a slightly conservative
+round figure. That estimate is drawn from permanent residents
+specifically and may not be the right margin for strongly migratory
+species. It is a provisional, literature-informed default that should
+be revisited as more species run through the pipeline.
+
+Huang, Q., J. R. Sauer, and R. O. Dubayah. 2017. Multidirectional
+abundance shifts among North American birds and the relative
+influence of multifaceted climate factors. Global Change Biology
+23:3610-3622. \doi{10.1111/gcb.13683}}
 
 \item{project_dir}{Character scalar or \code{NULL}. Path to the
 rENM project root. If \code{NULL}, the project directory is
@@ -22,12 +41,15 @@ resolved using \code{rENM_project_dir()}.}
 \value{
 Invisibly returns a named list with numeric elements
 \code{ul_lon}, \code{ul_lat}, \code{lr_lon}, and \code{lr_lat}
-(upper-left and lower-right corners in decimal degrees).
+(upper-left and lower-right corners in decimal degrees), plus
+\code{buffered_polygon}, the path to the saved buffered polygon.
 }
 \description{
-Reads a USGS GAP range shapefile for a species, computes a padded
-geographic bounding box in WGS84 coordinates, and writes the result
-to \code{_occs/extent.txt} within the species run directory.
+Reads a USGS GAP range shapefile for a species, buffers the range
+polygon outward by a fixed real-world margin, and writes the buffered
+polygon's geographic bounding box to \code{_occs/extent.txt} within the
+species run directory. The buffered polygon itself is saved alongside
+\code{extent.txt} for downstream use.
 }
 \details{
 Existing \code{extent.txt} files are automatically backed up prior
@@ -42,11 +64,30 @@ the \code{GAP.RANGE} field associated with the supplied
 \code{data/shapefiles/GAP_RANGE/GAP_RANGE.shp} under the project
 root, where \code{GAP_RANGE} is the value of that field.
 
-If the shapefile coordinate reference system is not longitude/latitude
-WGS84 (EPSG:4326), it is transformed before extent calculation.
-The resulting bounding box is symmetrically padded relative to its
-center using \code{pad_pct}. The result is written to
-\code{runs/ALPHA_CODE/_occs/extent.txt}.
+Three distinct geometric objects are involved, and they are not
+interchangeable:
+\itemize{
+\item The raw GAP polygon, the true irregular shape read from the
+shapefile. Range-based summary statistics are computed against
+this polygon, loaded directly from the shapefile by the functions
+that need it; this function does not alter it.
+\item The buffered GAP polygon, the raw polygon buffered outward by
+\code{buffer_km} in EPSG:5070 (USA Contiguous Albers Equal Area
+Conic), the equal-area CRS already used for CONUS vector work
+elsewhere in the framework. It is written to
+\code{runs/ALPHA_CODE/_occs/range_buffered.gpkg} in that same CRS,
+so that boundary/buffer-ring statistics can use the polygon itself
+rather than only its bounding box.
+\item The extent bounding box, the rectangle enclosing the buffered
+polygon, written to \code{runs/ALPHA_CODE/_occs/extent.txt} in
+WGS84 (EPSG:4326). This is the practical computational domain for
+rasters, environmental-variable extraction, and model
+construction.
+}
+
+Because the rectangle only has to contain the buffered polygon, its
+margin exceeds \code{buffer_km} at points away from the polygon's
+widest extent. That is expected.
 }
 \examples{
 \dontrun{
@@ -54,7 +95,7 @@ res <- find_range_extent("CASP")
 
 find_range_extent(
   alpha_code = "CASP",
-  pad_pct = 5
+  buffer_km = 300
 )
 }
 
