@@ -7,6 +7,10 @@ editor_options:
 
 # rENM.data 0.2.0.9000
 
+- `find_range_extent()`: the modeled extent is now derived from a true 250 km real-world buffer around the GAP range polygon rather than a symmetric percentage pad of its bounding box. The buffer is applied in EPSG:5070 (USA Contiguous Albers Equal Area Conic), so the margin is a real ground distance in every direction; the previous `pad_pct` approach padded in lon/lat degrees, which varies with latitude and corresponds to no fixed distance. On the pilot species a 2% pad worked out to roughly 14-17 km, against centroid displacements of 59-103 km already observed over the study window.
+- `find_range_extent()`: the `pad_pct` argument is replaced by `buffer_km` (default `250`). The default is documented in the function help, including its derivation from Huang, Sauer & Dubayah (2017) and the caveat that it is drawn from permanent resident species.
+- `find_range_extent()`: the buffered polygon is now saved to `runs/<ALPHA_CODE>/_occs/range_buffered.gpkg` (in EPSG:5070) instead of being discarded once its bounding box is known, so that boundary/buffer-ring statistics can use the polygon itself. The returned list gains a `buffered_polygon` element giving its path.
+- `find_range_extent()`: `extent.txt` header comments now describe the buffer method (`buffer_km`, buffer CRS, buffered polygon filename) in place of the former `pad_pct` line, which would otherwise have described a method no longer in use. The `Upper-left:`/`Lower-right:` lines are unchanged in format and remain WGS84 (EPSG:4326).
 - `find_occurrence_extent()`: default `bbox_pct` changed from 99 to 90.
 - `find_occurrence_extent()`: occurrence records are now restricted to the Continental United States (CONUS) bounding box (Upper Left: -125.0 Longitude, 49.0 Latitude; Lower Right: -66.5 Longitude, 24.5 Latitude) before the percentile bounding box is computed.
 
