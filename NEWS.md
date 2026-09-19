@@ -5,7 +5,7 @@ editor_options:
     wrap: 72
 ---
 
-# rENM.data 0.2.0.9000
+# rENM.data 0.2.1.9000
 
 - `find_range_extent()`: the modeled extent is now derived from a true 250 km real-world buffer around the GAP range polygon rather than a symmetric percentage pad of its bounding box. The buffer is applied in EPSG:5070 (USA Contiguous Albers Equal Area Conic), so the margin is a real ground distance in every direction; the previous `pad_pct` approach padded in lon/lat degrees, which varies with latitude and corresponds to no fixed distance. On the pilot species a 2% pad worked out to roughly 14-17 km, against centroid displacements of 59-103 km already observed over the study window.
 - `find_range_extent()`: the `pad_pct` argument is replaced by `buffer_km` (default `250`). The default is documented in the function help, including its derivation from Huang, Sauer & Dubayah (2017) and the caveat that it is drawn from permanent resident species.
