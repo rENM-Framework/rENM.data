@@ -16,10 +16,10 @@
 #'   range polygon, in kilometers, before its bounding box is taken.
 #'   Must be non-negative. Default is \code{250}.
 #'
-#'   The default is a single fixed distance applied uniformly across all
-#'   species rather than sized per species. Sizing it from a species' own
-#'   computed centroid velocity would be circular, since that velocity is
-#'   an output of the analysis rather than a known input to it. The 250 km
+#'   The buffered polygon is species-specific. The distance is not. The same
+#'   250 km is used for every species. Sizing it from a species' own computed
+#'   centroid velocity would be circular, since that velocity is an output of
+#'   the analysis rather than a known input to it. The 250 km
 #'   figure derives from Huang, Sauer & Dubayah (2017), who tracked the
 #'   abundance-weighted geographic centroid of 57 permanent resident North
 #'   American bird species over 44 years using Breeding Bird Survey data
