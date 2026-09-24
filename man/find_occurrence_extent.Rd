@@ -54,6 +54,23 @@ computation.
 This function is typically called after \code{\link{tidy_occurrences}} has
 moved finalized occurrence files into \code{_occs/}.
 }
+\section{Not the standard method}{
+
+\code{\link{find_range_extent}} is the method the pipeline uses and the
+one the User Manual documents. This function is retained for cases where
+no USGS GAP range polygon exists, such as work outside CONUS or on taxa
+GAP does not cover.
+
+Two consequences of using it. An extent derived from occurrence records
+moves as those records accumulate, and eBird effort is far from uniform
+across the 1980-2024 window, so the region the models draw their
+background from partly reflects sampling effort rather than an a priori
+hypothesis about accessible area. And it writes no buffered range
+polygon, so \code{rENM.analysis::find_boundary_trend_statistics()} has
+no interior or ring to compare and is skipped; the boundary block is then
+absent from the state summary table.
+}
+
 \examples{
 \dontrun{
 res <- find_occurrence_extent("CASP")

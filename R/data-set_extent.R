@@ -2,9 +2,19 @@
 #'
 #' Writes an \code{extent.txt} file for a species run from explicit bounding
 #' box coordinates. Any existing \code{extent.txt} is renamed to a backup
-#' before writing. Use \code{\link{find_occurrence_extent}} or
-#' \code{\link{find_range_extent}} to derive the extent automatically from
-#' data rather than supplying coordinates manually.
+#' before writing.
+#'
+#' @section Not the standard method:
+#' \code{\link{find_range_extent}} is the method the pipeline uses and the
+#' one the User Manual documents. This function is an escape hatch, for
+#' reproducing an extent from prior work or for cases where no USGS GAP
+#' range polygon exists. Whether a manually supplied extent is defensible
+#' depends entirely on how it was chosen.
+#'
+#' It writes no buffered range polygon, so
+#' \code{rENM.analysis::find_boundary_trend_statistics()} has no interior or
+#' ring to compare and is skipped; the boundary block is then absent from
+#' the state summary table.
 #'
 #' @details
 #' Coordinates are provided as upper-left and lower-right corners in

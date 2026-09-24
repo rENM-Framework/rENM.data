@@ -7,6 +7,17 @@ editor_options:
 
 # rENM.data 0.2.0.9000
 
+- `find_occurrence_extent()` and `set_extent()` are documented as non-standard.
+  `find_range_extent()` is the method the pipeline uses and the only one the
+  User Manual now documents. Both alternatives remain exported, since no USGS
+  GAP range polygon exists outside CONUS or for taxa GAP does not cover, but
+  their help now states two consequences. An extent derived from occurrence
+  records moves as those records accumulate, and eBird effort is far from
+  uniform across 1980-2024, so the region the models draw their background
+  from would partly reflect sampling effort rather than an a priori hypothesis
+  about accessible area. And neither writes a buffered range polygon, so
+  boundary statistics have no interior or ring to compare and are skipped.
+
 - `find_range_extent()`: the modeled extent is now derived from a true 250 km real-world buffer around the GAP range polygon rather than a symmetric percentage pad of its bounding box. The buffer is applied in EPSG:5070 (USA Contiguous Albers Equal Area Conic), so the margin is a real ground distance in every direction; the previous `pad_pct` approach padded in lon/lat degrees, which varies with latitude and corresponds to no fixed distance. On the pilot species a 2% pad worked out to roughly 14-17 km, against centroid displacements of 59-103 km already observed over the study window.
 - `find_range_extent()`: the `pad_pct` argument is replaced by `buffer_km` (default `250`). The default is documented in the function help, including its derivation from Huang, Sauer & Dubayah (2017) and the caveat that it is drawn from permanent resident species.
 - `find_range_extent()`: the buffered polygon is now saved to `runs/<ALPHA_CODE>/_occs/range_buffered.gpkg` (in EPSG:5070) instead of being discarded once its bounding box is known, so that boundary/buffer-ring statistics can use the polygon itself. The returned list gains a `buffered_polygon` element giving its path.
