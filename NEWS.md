@@ -7,6 +7,12 @@ editor_options:
 
 # rENM.data 0.2.0.9000
 
+- `tidy_occurrences()` now checks that the temporary occurrence directory
+  was actually removed. It called `unlink()` once, ignored the result and
+  logged the directory as removed; inside Dropbox the sync client can hold
+  files written moments earlier, so the directory was occasionally left
+  behind (one run in six on 1 October). It now retries up to five times a
+  second apart, warns if the directory survives, and logs what happened.
 - `find_occurrence_extent()` and `set_extent()` are documented as non-standard.
   `find_range_extent()` is the method the pipeline uses and the only one the
   User Manual now documents. Both alternatives remain exported, since no USGS

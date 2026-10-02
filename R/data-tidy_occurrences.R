@@ -75,8 +75,23 @@ tidy_occurrences <- function(alpha_code, project_dir = NULL) {
   }
 
   ## ---- remove tmp directory -------------------------------------------------
-  unlink(tmp_dir, recursive = TRUE, force = TRUE)
-  message("Removed temporary directory: ", tmp_dir)
+  # unlink() reports failure through its return value and the directory's
+  # continued existence, not an error. Inside a Dropbox folder the sync client
+  # can briefly hold files written moments earlier, so a single attempt
+  # sometimes fails; the directory was then left behind while the log said
+  # it had been removed. Retry briefly, then say what actually happened.
+  for (attempt in 1:5) {
+    unlink(tmp_dir, recursive = TRUE, force = TRUE)
+    if (!dir.exists(tmp_dir)) break
+    Sys.sleep(1)
+  }
+  tmp_removed <- !dir.exists(tmp_dir)
+  if (tmp_removed) {
+    message("Removed temporary directory: ", tmp_dir)
+  } else {
+    warning("Could not remove temporary directory after 5 attempts: ", tmp_dir,
+            ". Nothing reads it; it can be deleted by hand.", call. = FALSE)
+  }
 
   ## ---- log ------------------------------------------------------------------
   .append_log(log_fp, "Processing summary (tidy_occurrences)", c(
@@ -84,7 +99,8 @@ tidy_occurrences <- function(alpha_code, project_dir = NULL) {
     sprintf("Files moved:              %d", length(moved_files)),
     "Moved files:",
     paste0("  - ", basename(moved_files)),
-    sprintf("Temporary directory removed: %s", tmp_dir)
+    sprintf("Temporary directory %s: %s",
+            if (tmp_removed) "removed" else "NOT removed", tmp_dir)
   ))
 
   invisible(list(
