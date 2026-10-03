@@ -22,7 +22,7 @@ This package depends on `rENM.core` for project-directory resolution and species
 | `limit_record_count()` | Randomly downsample bins to a maximum record count |
 | `tidy_occurrences()` | Finalize: move cleaned files from staging to main directory |
 | `find_occurrence_extent()` | Derive spatial extent from occurrence data |
-| `find_range_extent()` | Derive spatial extent from a USGS GAP range polygon |
+| `find_range_extent()` | Derive spatial extent from the USGS GAP range polygon, buffered by 250 km |
 | `set_extent()` | Set spatial extent from explicit coordinates |
 | `get_merra_variables()` | Crop MERRA-2 predictor rasters to the species extent |
 
@@ -59,8 +59,8 @@ limit_record_count("CASP", record_count = 250, project_dir = proj)
 # 4. Move finalized records to main directory
 tidy_occurrences("CASP", project_dir = proj)
 
-# 5. Derive spatial extent from occurrence data
-find_occurrence_extent("CASP", bbox_pct = 90, project_dir = proj)
+# 5. Set the spatial extent from the GAP range, buffered by 250 km
+find_range_extent("CASP", project_dir = proj)
 
 # 6. Crop MERRA-2 predictors to the species extent
 get_merra_variables("CASP", project_dir = proj)
@@ -96,8 +96,8 @@ Each step reads from and writes to `<run_dir>/_occs/tmp/`. `tidy_occurrences()` 
 
 Three functions produce the `extent.txt` file required by `get_merra_variables()`. Use whichever fits your workflow:
 
+- `find_range_extent()` — derives extent from the USGS GAP range polygon buffered by 250 km; the default, and what `rENM()` uses
 - `find_occurrence_extent()` — derives extent from the species' occurrence records restricted to the Continental United States (CONUS), using a centered percentile bounding box
-- `find_range_extent()` — derives extent from a USGS GAP range polygon with optional symmetric padding
 - `set_extent()` — sets extent from explicit bounding box coordinates
 
 ## Role in the rENM Framework
