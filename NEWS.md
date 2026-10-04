@@ -7,6 +7,14 @@ editor_options:
 
 # rENM.data 0.2.0.9000
 
+- Added `clip_occurrences()`, which removes records outside the extent box
+  in `_occs/extent.txt` from each bin before thinning and capping. Records
+  outside the box have no predictor values, so `sdm` drops them when a model
+  is fitted, but until now they still counted toward the per-bin record cap.
+  For Grace's Warbler, 126 to 181 of each bin's 250 records reached the
+  models. The extent must now be set before thinning; `rENM()` runs
+  `find_range_extent()` and then `clip_occurrences()` directly after
+  `remove_duplicate_occurrences()`.
 - `tidy_occurrences()` now checks that the temporary occurrence directory
   was actually removed. It called `unlink()` once, ignored the result and
   logged the directory as removed; inside Dropbox the sync client can hold

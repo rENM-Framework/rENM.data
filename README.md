@@ -17,6 +17,7 @@ This package depends on `rENM.core` for project-directory resolution and species
 | `set_up_run()` | Initialize the directory structure for a species run |
 | `get_ebird_occurrences()` | Read and bin an eBird EBD file into 5-year temporal bins |
 | `remove_duplicate_occurrences()` | Remove exact-coordinate duplicate records |
+| `clip_occurrences()` | Remove records outside the extent before thinning and capping |
 | `thin_occurrences()` | Sequential spatial thinning (Haversine nearest-neighbor) |
 | `thin_occurrences2()` | Parallel spatial thinning with optional record cap |
 | `limit_record_count()` | Randomly downsample bins to a maximum record count |
@@ -51,18 +52,22 @@ set_up_run("CASP", project_dir = proj)
 # 2. Read eBird EBD file and bin by 5-year period
 get_ebird_occurrences("CASP", project_dir = proj)
 
-# 3. Clean occurrence records
+# 3. Remove exact-coordinate duplicates
 remove_duplicate_occurrences("CASP", project_dir = proj)
+
+# 4. Set the spatial extent from the GAP range, buffered by 250 km,
+#    and drop records outside it before thinning and capping
+find_range_extent("CASP", project_dir = proj)
+clip_occurrences("CASP", project_dir = proj)
+
+# 5. Thin and cap the remaining records
 thin_occurrences("CASP", thin_distance = 10, project_dir = proj)
 limit_record_count("CASP", record_count = 250, project_dir = proj)
 
-# 4. Move finalized records to main directory
+# 6. Move finalized records to main directory
 tidy_occurrences("CASP", project_dir = proj)
 
-# 5. Set the spatial extent from the GAP range, buffered by 250 km
-find_range_extent("CASP", project_dir = proj)
-
-# 6. Crop MERRA-2 predictors to the species extent
+# 7. Crop MERRA-2 predictors to the species extent
 get_merra_variables("CASP", project_dir = proj)
 ```
 
@@ -83,6 +88,10 @@ get_ebird_occurrences()
         ↓
 remove_duplicate_occurrences()
         ↓
+find_range_extent()           (writes _occs/extent.txt)
+        ↓
+clip_occurrences()
+        ↓
 thin_occurrences()  or  thin_occurrences2()  (parallel)
         ↓
 limit_record_count()          (optional)
@@ -90,7 +99,7 @@ limit_record_count()          (optional)
 tidy_occurrences()
 ```
 
-Each step reads from and writes to `<run_dir>/_occs/tmp/`. `tidy_occurrences()` moves the final files to `<run_dir>/_occs/` and removes the staging directory.
+Each step reads from and writes to `<run_dir>/_occs/tmp/`, except `find_range_extent()`, which writes `<run_dir>/_occs/extent.txt`. The extent is set before thinning so that `clip_occurrences()` can remove records the models could not use before they count toward the record cap. `tidy_occurrences()` moves the final files to `<run_dir>/_occs/` and removes the staging directory.
 
 ## Spatial extent
 

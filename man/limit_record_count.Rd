@@ -44,6 +44,7 @@ limit_record_count("CASP", record_count = 500, project_dir = "/projects/rENM")
 \code{\link{thin_occurrences}}, \code{\link{tidy_occurrences}}
 
 Other occurrence processing:
+\code{\link[=clip_occurrences]{clip_occurrences()}},
 \code{\link[=remove_duplicate_occurrences]{remove_duplicate_occurrences()}},
 \code{\link[=thin_occurrences]{thin_occurrences()}}
 }
