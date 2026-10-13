@@ -7,6 +7,36 @@ editor_options:
 
 # rENM.data 0.2.0.9000
 
+- Ships a land/water footprint for the MERRA-2 grid as
+  `inst/resources/evland-mask.tif`, and `get_merra_variables()` stages it as
+  `_vars/<year>/evland.asc` when, and only when, the dataset carries no
+  `evland` of its own. `create_ensemble_model()` began masking every bin to
+  land in rENM.model 0.2.0, reading that mask from `_vars/<year>/evland.asc`.
+  The mask had always been staged incidentally, as one more raster found
+  under `data/merra/m2/<year>/`, so the change quietly turned a modeling
+  decision into a data requirement. The v0.1.0 extended dataset carries
+  `evland` among its thirty m2 variables and is unaffected; the v0.1.0
+  example dataset carries seven and does not, so every bin failed with
+  "Land mask source not found" against data that was complete for the
+  version it was published with.
+- The packaged file is a footprint, not data: land cells hold 1 and water is
+  `NA`, which is all `raster::mask()` reads. It derives from the `evland`
+  published in the v0.1.0 extended dataset, verified identical to it and to
+  all nine bins of the author's working dataset, zero differing cells. The
+  footprint does not vary by year, so one file serves every bin, and
+  reducing the raster to its footprint takes it from 92.8 MB as `.asc` to
+  129 KB. Provenance is recorded in `inst/resources/evland-mask-README.md`.
+  The dataset stays authoritative where it speaks: a later MERRA release
+  carrying a corrected footprint, or a study supplying its own, is used in
+  preference to this copy rather than being silently overridden, and the log
+  records which source was used.
+- The mask is resampled onto a raster already staged for the bin rather than
+  cropped to the same bounding box. It is on the same 0.0833 degree spacing
+  but its global grid starts elsewhere, so cropping snapped to different
+  cell edges and produced a grid five rows taller, which
+  `create_ensemble_model()` rejected at `compareRaster()` with "different
+  extent".
+
 - Added `clip_occurrences()`, which removes records outside the extent box
   in `_occs/extent.txt` from each bin before thinning and capping. Records
   outside the box have no predictor values, so `sdm` drops them when a model

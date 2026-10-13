@@ -301,6 +301,66 @@ get_merra_variables <- function(alpha_code,
         stringsAsFactors = FALSE)
     }
 
+    # ---- Land mask -------------------------------------------------------
+    # create_ensemble_model() masks every bin to one land footprint, read
+    # from _vars/<year>/evland.asc. That footprint is staged here like any
+    # other m2 raster whenever the dataset carries `evland`. The datasets
+    # published for Framework v0.1.0 do not all carry it -- the example
+    # dataset ships seven m2 variables and no evland -- so requiring it
+    # turned a modeling decision into a data requirement and every bin
+    # failed with "Land mask source not found" against data that was
+    # complete for the version it shipped with.
+    #
+    # Fall back to the footprint packaged with this package, cropped by the
+    # same path as everything else so the grids still match. The dataset
+    # stays authoritative where it speaks: a later MERRA release carrying a
+    # corrected footprint is used in preference to this copy, rather than
+    # being silently overridden by a mask frozen into a package version.
+    # Which source was used is logged, so the choice is never invisible.
+    land_asc <- file.path(out_dir, "evland.asc")
+    if (!file.exists(land_asc)) {
+      mask_fp <- system.file("resources", "evland-mask.tif",
+                             package = "rENM.data")
+      if (!nzchar(mask_fp)) {
+        .catln("  ! No evland in the dataset and no packaged land mask found.")
+      } else {
+        # Aligned to a raster already staged for this bin rather than
+        # cropped independently. The packaged mask is on the same 0.0833
+        # degree spacing but its global grid starts elsewhere, so cropping
+        # it to the same bounding box snapped to different cell edges and
+        # produced a grid five rows taller: create_ensemble_model() then
+        # stopped at compareRaster() with "different extent". Resampling
+        # onto a staged raster makes the grids identical by construction.
+        staged <- list.files(out_dir, pattern = "[.]tif$", full.names = TRUE)
+        staged <- setdiff(staged, file.path(out_dir, "evland.tif"))
+        m <- if (length(staged)) .read_rast(mask_fp) else NULL
+        if (is.null(m) && length(staged)) {
+          .catln("  ! Could not read the packaged land mask.")
+        }
+        if (!length(staged)) {
+          .catln("  ! No staged raster for ", y,
+                 " to align the packaged land mask against.")
+        }
+        if (!is.null(m) && length(staged)) {
+          tmpl   <- .read_rast(staged[[1L]])
+          m_crop <- try(.t$resample(m, tmpl, method = "near"), silent = TRUE)
+          if (inherits(m_crop, "try-error") || is.null(m_crop)) {
+            .catln("  ! Could not align the packaged land mask.")
+          } else {
+            .catln("  - No evland in the dataset for ", y,
+                   "; staging the land mask packaged with rENM.data.")
+            .write_tif(m_crop, file.path(out_dir, "evland.tif"))
+            if (.write_asc(m_crop, land_asc)) wrote_asc <- wrote_asc + 1L
+            out_rows[[length(out_rows) + 1L]] <- data.frame(
+              year = y, family = "m2", basename = "evland", in_file = mask_fp,
+              tif_written = TRUE, asc_written = TRUE,
+              notes = "packaged land mask (dataset carries no evland)",
+              stringsAsFactors = FALSE)
+          }
+        }
+      }
+    }
+
     .catln(sprintf("  - Wrote %d .tif and %d .asc file(s) to %s",
                    wrote_tif, wrote_asc, out_dir))
   }
